@@ -11,6 +11,7 @@ import gym
 import copy
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 
 from environment.BaseEnv import BaseEnv, BaseEnvTimestep
 
@@ -55,7 +56,6 @@ def transform(position: Positions, action: int) -> Any:
         - next_position(Positions) : the position after transformation.
     '''
     if action == Actions.SELL:
-
         if position == Positions.LONG:
             return Positions.FLAT, False
 
@@ -63,7 +63,6 @@ def transform(position: Positions, action: int) -> Any:
             return Positions.SHORT, True
 
     if action == Actions.BUY:
-
         if position == Positions.SHORT:
             return Positions.FLAT, False
 
@@ -83,10 +82,9 @@ def transform(position: Positions, action: int) -> Any:
 class TradingEnv(BaseEnv):
 
     def __init__(self, cfg: EasyDict) -> None:
-
         self._cfg = cfg
         self._env_id = cfg.env_id
-        #======== param to plot =========
+        # ======== param to plot =========
         self.cnt = 0
 
         if 'plot_freq' not in self._cfg:
@@ -97,7 +95,7 @@ class TradingEnv(BaseEnv):
             self.save_path = 'envs/'
         else:
             self.save_path = self._cfg.save_path
-        #================================
+        # ================================
 
         self.train_range = cfg.train_range
         self.test_range = cfg.test_range
@@ -107,7 +105,7 @@ class TradingEnv(BaseEnv):
         self.feature_dim_len = None
         self.shape = (cfg.window_size, 3)
 
-        #======== param about episode =========
+        # ======== param about episode =========
         self._start_tick = 0
         self._end_tick = 0
         self._done = None
@@ -116,7 +114,7 @@ class TradingEnv(BaseEnv):
         self._position = None
         self._position_history = None
         self._total_reward = None
-        #======================================
+        # ======================================
 
         self._init_flag = True
         # init the following variables variable at first reset.
@@ -137,7 +135,7 @@ class TradingEnv(BaseEnv):
             self.shape = (self.window_size, self.feature_dim_len)
             self._action_space = spaces.Discrete(len(Actions))
             self._observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=self.shape, dtype=np.float64)
-            self._reward_space = gym.spaces.Box(-inf, inf, shape=(1, ), dtype=np.float32)
+            self._reward_space = gym.spaces.Box(-inf, inf, shape=(1,), dtype=np.float32)
             self._init_flag = False
         self._done = False
         self._current_tick = self._start_tick
@@ -154,7 +152,7 @@ class TradingEnv(BaseEnv):
 
     def step(self, action: np.ndarray) -> BaseEnvTimestep:
         assert isinstance(action, np.ndarray), type(action)
-        if action.shape == (1, ):
+        if action.shape == (1,):
             action = action.item()  # 0-dim array
 
         self._done = False
@@ -190,20 +188,21 @@ class TradingEnv(BaseEnv):
 
     def _get_observation(self) -> np.ndarray:
         obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):self._current_tick + 1]
-                         ).reshape(-1).astype(np.float32)
+                       ).reshape(-1).astype(np.float32)
 
         tick = (self._current_tick - self._last_trade_tick) / self._cfg.eps_length
         obs = np.hstack([obs, np.array([self._position.value]), np.array([tick])]).astype(np.float32)
         return obs
 
-    def render(self) -> None:
-        import matplotlib.pyplot as plt
+    def render_profit(self, save=False):
         plt.clf()
         plt.xlabel('trading days')
         plt.ylabel('profit')
         plt.plot(self._profit_history)
-        plt.savefig(self.save_path + str(self._env_id) + "-profit.png")
+        if save:
+            plt.savefig(self.save_path + str(self._env_id) + "-profit.png")
 
+    def render_price(self, save=False):
         plt.clf()
         plt.xlabel('trading days')
         plt.ylabel('close price')
@@ -226,7 +225,12 @@ class TradingEnv(BaseEnv):
         plt.plot(flat_ticks, eps_price[flat_ticks], 'bo', markersize=3, label="Flat")
         plt.plot(short_ticks, eps_price[short_ticks], 'rv', markersize=3, label="Short")
         plt.legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
-        plt.savefig(self.save_path + str(self._env_id) + '-price.png')
+        if save:
+            plt.savefig(self.save_path + str(self._env_id) + '-price.png')
+
+    def render(self) -> None:
+        self.render_profit(save=True)
+        self.render_price(save=True)
 
     def close(self):
         import matplotlib.pyplot as plt
