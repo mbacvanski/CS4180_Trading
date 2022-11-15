@@ -185,7 +185,7 @@ class TradingEnv(BaseEnv):
         step_reward = np.array([step_reward]).astype(np.float32)
         return BaseEnvTimestep(observation, step_reward, self._done, info)
 
-    def _get_observation(self) -> np.ndarray:
+    def _get_observation(self) -> State:
         obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):self._current_tick + 1]
                        ).reshape(-1).astype(np.float32)
 
@@ -227,9 +227,9 @@ class TradingEnv(BaseEnv):
         if save:
             plt.savefig(self.save_path + str(self._env_id) + '-price.png')
 
-    def render(self) -> None:
-        self.render_profit(save=True)
-        self.render_price(save=True)
+    def render(self, save=True) -> None:
+        self.render_profit(save)
+        self.render_price(save)
 
     def close(self):
         import matplotlib.pyplot as plt
