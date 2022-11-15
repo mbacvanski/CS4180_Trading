@@ -85,7 +85,7 @@ class StocksEnv(TradingEnv):
         return prices, selected_feature, feature_dim_len
 
     # override
-    def _calculate_reward(self, action: int) -> np.float32:
+    def _calculate_reward(self, action: Action) -> np.float32:
         step_reward = 0.
         current_price = (self.raw_prices[self._current_tick])
         last_trade_price = (self.raw_prices[self._last_trade_tick])

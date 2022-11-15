@@ -1,16 +1,16 @@
-from cmath import inf
-from typing import Any, List
-from easydict import EasyDict
+import copy
+import os
 from abc import abstractmethod
+from cmath import inf
+from enum import Enum
+from typing import Any, List
+
+import gym
+import numpy as np
+import pandas as pd
+from easydict import EasyDict
 from gym import spaces
 from gym.utils import seeding
-from enum import Enum
-
-import os
-import gym
-import copy
-import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 
 from environment.BaseEnv import BaseEnv, BaseEnvTimestep
@@ -43,7 +43,10 @@ class Position(int, Enum):
     LONG = 1.
 
 
-def transform(position: Position, action: int) -> Any:
+State = np.ndarray
+
+
+def transform(position: Position, action: Action) -> Any:
     '''
     Overview:
         used by environment.step().
@@ -150,11 +153,7 @@ class TradingEnv(BaseEnv):
     def random_action(self) -> Any:
         return np.array([self.action_space.sample()])
 
-    def step(self, action: np.ndarray) -> BaseEnvTimestep:
-        assert isinstance(action, np.ndarray), type(action)
-        if action.shape == (1,):
-            action = action.item()  # 0-dim array
-
+    def step(self, action: Action) -> BaseEnvTimestep:
         self._done = False
         self._current_tick += 1
 
