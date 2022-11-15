@@ -29,7 +29,7 @@ def load_dataset(name, index_name):
     return df
 
 
-class Actions(int, Enum):
+class Action(int, Enum):
     DOUBLE_SELL = 0
     SELL = 1
     HOLD = 2
@@ -37,43 +37,43 @@ class Actions(int, Enum):
     DOUBLE_BUY = 4
 
 
-class Positions(int, Enum):
+class Position(int, Enum):
     SHORT = -1.
     FLAT = 0.
     LONG = 1.
 
 
-def transform(position: Positions, action: int) -> Any:
+def transform(position: Position, action: int) -> Any:
     '''
     Overview:
-        used by environment.tep().
+        used by environment.step().
         This func is used to transform the environment's position from
         the input (position, action) pair according to the status machine.
     Arguments:
         - position(Positions) : Long, Short or Flat
-        - action(int) : Doulbe_Sell, Sell, Hold, Buy, Double_Buy
+        - action(int) : Double_Sell, Sell, Hold, Buy, Double_Buy
     Returns:
         - next_position(Positions) : the position after transformation.
     '''
-    if action == Actions.SELL:
-        if position == Positions.LONG:
-            return Positions.FLAT, False
+    if action == Action.SELL:
+        if position == Position.LONG:
+            return Position.FLAT, False
 
-        if position == Positions.FLAT:
-            return Positions.SHORT, True
+        if position == Position.FLAT:
+            return Position.SHORT, True
 
-    if action == Actions.BUY:
-        if position == Positions.SHORT:
-            return Positions.FLAT, False
+    if action == Action.BUY:
+        if position == Position.SHORT:
+            return Position.FLAT, False
 
-        if position == Positions.FLAT:
-            return Positions.LONG, True
+        if position == Position.FLAT:
+            return Position.LONG, True
 
-    if action == Actions.DOUBLE_SELL and (position == Positions.LONG or position == Positions.FLAT):
-        return Positions.SHORT, True
+    if action == Action.DOUBLE_SELL and (position == Position.LONG or position == Position.FLAT):
+        return Position.SHORT, True
 
-    if action == Actions.DOUBLE_BUY and (position == Positions.SHORT or position == Positions.FLAT):
-        return Positions.LONG, True
+    if action == Action.DOUBLE_BUY and (position == Position.SHORT or position == Position.FLAT):
+        return Position.LONG, True
 
     return position, False
 
@@ -133,14 +133,14 @@ class TradingEnv(BaseEnv):
         self.prices, self.signal_features, self.feature_dim_len = self._process_data(start_idx)
         if self._init_flag:
             self.shape = (self.window_size, self.feature_dim_len)
-            self._action_space = spaces.Discrete(len(Actions))
+            self._action_space = spaces.Discrete(len(Action))
             self._observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=self.shape, dtype=np.float64)
             self._reward_space = gym.spaces.Box(-inf, inf, shape=(1,), dtype=np.float32)
             self._init_flag = False
         self._done = False
         self._current_tick = self._start_tick
         self._last_trade_tick = self._current_tick - 1
-        self._position = Positions.FLAT
+        self._position = Position.FLAT
         self._position_history = [self._position]
         self._profit_history = [1.]
         self._total_reward = 0.
@@ -214,9 +214,9 @@ class TradingEnv(BaseEnv):
         long_ticks = []
         flat_ticks = []
         for i, tick in enumerate(window_ticks):
-            if self._position_history[i] == Positions.SHORT:
+            if self._position_history[i] == Position.SHORT:
                 short_ticks.append(tick)
-            elif self._position_history[i] == Positions.LONG:
+            elif self._position_history[i] == Position.LONG:
                 long_ticks.append(tick)
             else:
                 flat_ticks.append(tick)

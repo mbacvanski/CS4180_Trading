@@ -116,16 +116,6 @@ class BaseEnv(gym.Env, ABC, metaclass=FinalMeta):
         return [cfg for _ in range(evaluator_env_num)]
 
     # optional method
-    def enable_save_replay(self, replay_path: str) -> None:
-        """
-        Overview:
-            Save replay file in the given path, and this method need to be self-implemented by each environment class.
-        Arguments:
-            - replay_path (:obj:`str`): The path to save replay file.
-        """
-        raise NotImplementedError
-
-    # optional method
     def random_action(self) -> Any:
         """
         Overview:

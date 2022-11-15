@@ -3,7 +3,7 @@ from typing import Any
 
 import numpy as np
 
-from environment.trading_env import Actions, Positions, TradingEnv, load_dataset
+from environment.trading_env import Action, Position, TradingEnv, load_dataset
 
 
 class StocksEnv(TradingEnv):
@@ -16,7 +16,7 @@ class StocksEnv(TradingEnv):
         self.raw_prices = raw_data.loc[:, 'Close'].to_numpy()
         EPS = 1e-10
         self.df = deepcopy(raw_data)
-        if self.train_range == None or self.test_range == None:
+        if self.train_range is None or self.test_range is None:
             self.df = self.df.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
         else:
             boundary = int(len(self.df) * self.train_range)
@@ -64,7 +64,7 @@ class StocksEnv(TradingEnv):
 
         # validate index
         if start_idx is None:
-            if self.train_range == None or self.test_range == None:
+            if self.train_range is None or self.test_range is None:
                 self.start_idx = np.random.randint(self.window_size, len(self.df) - self._cfg.eps_length)
             elif self._env_id[-1] == 'e':
                 boundary = int(len(self.df) * (1 + self.test_range))
@@ -92,16 +92,16 @@ class StocksEnv(TradingEnv):
         ratio = current_price / last_trade_price
         cost = np.log((1 - self.trade_fee_ask_percent) * (1 - self.trade_fee_bid_percent))
 
-        if action == Actions.BUY and self._position == Positions.SHORT:
+        if action == Action.BUY and self._position == Position.SHORT:
             step_reward = np.log(2 - ratio) + cost
 
-        if action == Actions.SELL and self._position == Positions.LONG:
+        if action == Action.SELL and self._position == Position.LONG:
             step_reward = np.log(ratio) + cost
 
-        if action == Actions.DOUBLE_SELL and self._position == Positions.LONG:
+        if action == Action.DOUBLE_SELL and self._position == Position.LONG:
             step_reward = np.log(ratio) + cost
 
-        if action == Actions.DOUBLE_BUY and self._position == Positions.SHORT:
+        if action == Action.DOUBLE_BUY and self._position == Position.SHORT:
             step_reward = np.log(2 - ratio) + cost
 
         step_reward = float(step_reward)
