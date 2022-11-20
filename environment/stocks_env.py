@@ -36,7 +36,7 @@ class StocksEnv(TradingEnv):
 
     # override
     def _process_data(self, start_idx: int = None) -> Any:
-        '''
+        """
         Overview:
             used by environment.reset(), process the raw data.
         Arguments:
@@ -45,7 +45,7 @@ class StocksEnv(TradingEnv):
             - prices: the close.
             - signal_features: feature map
             - feature_dim_len: the dimension length of selected feature
-        '''
+        """
 
         # ====== build feature map ========
         all_feature_name = ['Close', 'Open', 'High', 'Low', 'Adj Close', 'Volume']
@@ -85,7 +85,7 @@ class StocksEnv(TradingEnv):
         return prices, selected_feature, feature_dim_len
 
     # override
-    def _calculate_reward(self, action: Action) -> np.float32:
+    def _calculate_reward(self, action: Action) -> float:
         step_reward = 0.
         current_price = (self.raw_prices[self._current_tick])
         last_trade_price = (self.raw_prices[self._last_trade_tick])

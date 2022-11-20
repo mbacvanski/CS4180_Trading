@@ -1,9 +1,9 @@
-import copy
+import dataclasses
 import os
 from abc import abstractmethod
 from cmath import inf
 from enum import Enum
-from typing import Any, List
+from typing import Any
 
 import gym
 import numpy as np
@@ -43,11 +43,15 @@ class Position(int, Enum):
     LONG = 1.
 
 
-State = np.ndarray
+@dataclasses.dataclass
+class State:
+    history: np.ndarray
+    position: Position
+    tick: float
 
 
 def transform(position: Position, action: Action) -> Any:
-    '''
+    """
     Overview:
         used by environment.step().
         This func is used to transform the environment's position from
@@ -57,7 +61,7 @@ def transform(position: Position, action: Action) -> Any:
         - action(int) : Double_Sell, Sell, Hold, Buy, Double_Buy
     Returns:
         - next_position(Positions) : the position after transformation.
-    '''
+    """
     if action == Action.SELL:
         if position == Position.LONG:
             return Position.FLAT, False
@@ -125,13 +129,15 @@ class TradingEnv(BaseEnv):
         self._observation_space = None
         self._reward_space = None
 
+        self._profit_history = [1.]
+
     def seed(self, seed: int, dynamic_seed: bool = True) -> None:
         self._seed = seed
         self._dynamic_seed = dynamic_seed
         np.random.seed(self._seed)
         self.np_random, seed = seeding.np_random(seed)
 
-    def reset(self, start_idx: int = None) -> Any:
+    def reset(self, start_idx: int = None) -> State:
         self.cnt += 1
         self.prices, self.signal_features, self.feature_dim_len = self._process_data(start_idx)
         if self._init_flag:
@@ -186,12 +192,12 @@ class TradingEnv(BaseEnv):
         return BaseEnvTimestep(observation, step_reward, self._done, info)
 
     def _get_observation(self) -> State:
-        obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):self._current_tick + 1]
-                       ).reshape(-1).astype(np.float32)
+        obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):
+                                            self._current_tick + 1]).astype(np.float32)
 
         tick = (self._current_tick - self._last_trade_tick) / self._cfg.eps_length
-        obs = np.hstack([obs, np.array([self._position.value]), np.array([tick])]).astype(np.float32)
-        return obs
+
+        return State(history=obs, position=self._position.value, tick=tick)
 
     def render_profit(self, save=False):
         plt.clf()
@@ -234,46 +240,6 @@ class TradingEnv(BaseEnv):
     def close(self):
         import matplotlib.pyplot as plt
         plt.close()
-
-    # override
-    def create_collector_env_cfg(cfg: dict) -> List[dict]:
-        """
-        Overview:
-            Return a list of all of the environment from input config, used in environment manager \
-            (a series of vectorized environment), and this method is mainly responsible for envs collecting data.
-            In TradingEnv, this method will rename every env_id and generate different config.
-        Arguments:
-            - cfg (:obj:`dict`): Original input environment config, which needs to be transformed into the type of creating \
-                environment instance actually and generated the corresponding number of configurations.
-        Returns:
-            - env_cfg_list (:obj:`List[dict]`): List of ``cfg`` including all the config collector envs.
-        .. note::
-            Elements(environment config) in collector_env_cfg/evaluator_env_cfg can be different, such as server ip and port.
-        """
-        collector_env_num = cfg.pop('collector_env_num')
-        collector_env_cfg = [copy.deepcopy(cfg) for _ in range(collector_env_num)]
-        for i in range(collector_env_num):
-            collector_env_cfg[i]['env_id'] += ('-' + str(i) + 'e')
-        return collector_env_cfg
-
-    # override
-    def create_evaluator_env_cfg(cfg: dict) -> List[dict]:
-        """
-        Overview:
-            Return a list of all of the environment from input config, used in environment manager \
-            (a series of vectorized environment), and this method is mainly responsible for envs evaluating performance.
-            In TradingEnv, this method will rename every env_id and generate different config.
-        Arguments:
-            - cfg (:obj:`dict`): Original input environment config, which needs to be transformed into the type of creating \
-                environment instance actually and generated the corresponding number of configurations.
-        Returns:
-            - env_cfg_list (:obj:`List[dict]`): List of ``cfg`` including all the config evaluator envs.
-        """
-        evaluator_env_num = cfg.pop('evaluator_env_num')
-        evaluator_env_cfg = [copy.deepcopy(cfg) for _ in range(evaluator_env_num)]
-        for i in range(evaluator_env_num):
-            evaluator_env_cfg[i]['env_id'] += ('-' + str(i) + 'e')
-        return evaluator_env_cfg
 
     @abstractmethod
     def _process_data(self):
