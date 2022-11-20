@@ -188,7 +188,6 @@ class TradingEnv(BaseEnv):
             info['max_possible_profit'] = np.log(self.max_possible_profit())
             info['final_eval_reward'] = self._total_reward
 
-        step_reward = np.array([step_reward]).astype(np.float32)
         return BaseEnvTimestep(observation, step_reward, self._done, info)
 
     def _get_observation(self) -> State:
