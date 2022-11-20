@@ -232,6 +232,10 @@ class TradingEnv(BaseEnv):
         if save:
             plt.savefig(self.save_path + str(self._env_id) + '-price.png')
 
+    def final_profit(self) -> float:
+        return self._profit_history[-1]
+
+
     def render(self, save=True) -> None:
         self.render_profit(save)
         self.render_price(save)
