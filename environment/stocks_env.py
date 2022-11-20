@@ -58,7 +58,8 @@ class StocksEnv(TradingEnv):
         # =================================
 
         # you can select features you want
-        selected_feature_name = ['Close', 'Diff', 'Volume']
+        # selected_feature_name = ['Close', 'Diff', 'Volume']
+        selected_feature_name = ['Close', 'Open', 'High', 'Low', 'Adj Close', 'Volume']
         selected_feature = np.column_stack([all_feature[k] for k in selected_feature_name])
         feature_dim_len = len(selected_feature_name)
 

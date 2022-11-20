@@ -24,7 +24,6 @@ class Config:
 
 
 def semigradient_sarsa(config: Config):
-    # w: Weights = np.zeros(len(config.env.action_space) * len(config.env.observation_space))
     s = config.env.reset()
     features_length = sum([len(feature(s, Action(config.env.random_action()))) for feature in config.features])
     w: Weights = np.zeros(features_length)
@@ -32,10 +31,14 @@ def semigradient_sarsa(config: Config):
     allowed_actions = [Action.BUY, Action.HOLD, Action.SELL]
 
     profits = []
+    max_possible_profits = []
+    buy_and_hold_profits = []
 
     for _ in tqdm.trange(config.num_episodes):
         # reset the environment
         state = config.env.reset()
+
+        state_history = [state.history]
 
         # find me an action
         action = epsilon_greedy_action_selection(state=state, action_space=allowed_actions,
@@ -44,6 +47,7 @@ def semigradient_sarsa(config: Config):
         for timestep in range(config.max_timesteps):
             # take the action and observe the next state and reward
             next_state, reward, done, _ = config.env.step(action)
+            state_history.append(next_state.history)
             # print(f'{w} | {state.history[-1]} + {Action(action).name} => {reward}')
 
             # pick the next action epsilon greedily
@@ -60,8 +64,11 @@ def semigradient_sarsa(config: Config):
                 action = next_action
 
         profits.append(config.env.final_profit())
+        max_possible_profits.append(config.env.max_possible_profit())
+        buy_and_hold_profits.append(state_history[-1][0][0] - state_history[0][-1][1])
+        # buy at first open, sell at last close
 
-    return config.env, profits
+    return config.env, profits, max_possible_profits, buy_and_hold_profits
 
 
 def compute_g(rewards: List[float], gamma: float):
