@@ -9,7 +9,7 @@ from utils.experiment import ExperimentResult, visualize_experiment
 
 def main():
     config = Config(
-        num_episodes=1,
+        num_episodes=100,
         max_timesteps=300,
         alpha=0.9,
         gamma=0.9,

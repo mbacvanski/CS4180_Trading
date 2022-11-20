@@ -24,7 +24,7 @@ class ExperimentResult:
             .astimezone(tz=tz.gettz('America/Boston')).strftime('%Y-%m-%d--%H-%M-%S')
 
     def to_file(self):
-        filename = f'experiments/{self.algorithm}_{self.timestamp}.pickle'
+        filename = f'data/{self.algorithm}_{self.timestamp}.pickle'
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
             return filename
