@@ -22,3 +22,10 @@ class RLConfig(AgentConfig):
     gamma: float
     epsilon: float
     features: List[FeatureExtractor]
+
+
+@dataclass
+class DQNConfig(AgentConfig):
+    gamma: float
+    epsilon: float
+    features: List[FeatureExtractor]
