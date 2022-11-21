@@ -8,13 +8,13 @@ import numpy as np
 from dateutil import tz
 from matplotlib import pyplot as plt
 
-from agents.semigradient_sarsa_agent import Config
+from agents.agents import AgentConfig
 from environment import TradingEnv
 
 
 @dataclasses.dataclass
 class ExperimentResult:
-    config: Config
+    config: AgentConfig
     final_env: TradingEnv
     profits: List[float]
     max_possible_profits: List[float]
@@ -42,6 +42,8 @@ def visualize_experiment(filename: str):
     r = ExperimentResult.from_file(filename)
     plot_profits(r)
     plt.show()
+
+    r.final_env.render()
 
 
 def plot_profits(r: ExperimentResult):

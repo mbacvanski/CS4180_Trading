@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+from numba import njit
 from numpy import ndarray
 
 from environment import Action, State
@@ -27,12 +28,17 @@ def on_balance_volume(state: State) -> float:
 
 def accumulation_distribution(state: State) -> float:
     # https://www.investopedia.com/terms/a/accumulationdistribution.asp
+    return accumulation_distribution_worker(state.history)
+
+
+@njit
+def accumulation_distribution_worker(history: np.ndarray) -> float:
     ad = 0
-    for i in range(len(state.history)):
-        close = state.history[i][0]
-        low = state.history[i][3]
-        high = state.history[i][2]
-        volume = state.history[i][5]
+    for i in range(len(history)):
+        close = history[i][0]
+        low = history[i][3]
+        high = history[i][2]
+        volume = history[i][5]
 
         mfm = ((close - low) - (high - close)) / (high - low)
         mfv = mfm * volume
@@ -40,7 +46,7 @@ def accumulation_distribution(state: State) -> float:
     return ad
 
 
-def avg_directional_idx(zstate: State):
+def avg_directional_idx(state: State):
     ...
 
 

@@ -1,29 +1,17 @@
 import random
-from dataclasses import dataclass
-from typing import Callable, List
+from typing import List
 
 import numpy as np
 import tqdm
 
 import environment
+from agents.agents import RLConfig, FeatureExtractor
 from environment import Action, State
 
 Weights = np.ndarray
-FeatureExtractor = Callable[[State, Action], np.ndarray]
 
 
-@dataclass
-class Config:
-    num_episodes: int
-    max_timesteps: int
-    alpha: float
-    gamma: float
-    epsilon: float
-    env: environment.TradingEnv
-    features: List[FeatureExtractor]
-
-
-def semigradient_sarsa(config: Config):
+def semigradient_sarsa(config: RLConfig):
     s = config.env.reset()
     features_length = sum([len(feature(s, Action(config.env.random_action()))) for feature in config.features])
     w: Weights = np.zeros(features_length)
@@ -90,6 +78,7 @@ def update_weights(weights: Weights, features: List[FeatureExtractor], is_termin
     else:
         q_next = compute_q_value(next_state, next_action, features, weights)
         update = reward + (gamma * q_next) - q
+        print(update)
         return weights + alpha * update * gradient_q
 
 

@@ -99,7 +99,7 @@ class TradingEnv(BaseEnv):
         else:
             self.plot_freq = self._cfg.plot_freq
         if 'save_path' not in self._cfg:
-            self.save_path = 'envs/'
+            self.save_path = 'data/plots/'
         else:
             self.save_path = self._cfg.save_path
         # ================================
@@ -205,6 +205,8 @@ class TradingEnv(BaseEnv):
         plt.plot(self._profit_history)
         if save:
             plt.savefig(self.save_path + str(self._env_id) + "-profit.png")
+        else:
+            plt.show()
 
     def render_price(self, save=False):
         plt.clf()
@@ -231,6 +233,8 @@ class TradingEnv(BaseEnv):
         plt.legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
         if save:
             plt.savefig(self.save_path + str(self._env_id) + '-price.png')
+        else:
+            plt.show()
 
     def final_profit(self) -> float:
         return self._profit_history[-1]

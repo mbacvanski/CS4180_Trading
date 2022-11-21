@@ -1,22 +1,23 @@
 import numpy as np
 from easydict import EasyDict
 
+from agents.agents import RLConfig
 from agents.features import seven_indicators
-from agents.semigradient_sarsa_agent import Config, semigradient_sarsa
+from agents.semigradient_sarsa_agent import semigradient_sarsa
 from environment import StocksEnv
 from utils.experiment import ExperimentResult, visualize_experiment
 
 
 def main():
-    config = Config(
-        num_episodes=300,
-        max_timesteps=100,
-        alpha=0.9,
-        gamma=0.9,
-        epsilon=0.1,
+    config = RLConfig(
+        num_episodes=100,
+        max_timesteps=500,  # this must equal eps_length
+        alpha=0.001,
+        gamma=0.99,
+        epsilon=0.01,
         env=StocksEnv(EasyDict({
-            "env_id": 'stocks-semigradient_sarsa', "eps_length": 1000,
-            "window_size": 300, "train_range": None, "test_range": None,
+            "env_id": 'stocks-semigradient_sarsa', "eps_length": 500,
+            "window_size": 50, "train_range": None, "test_range": None,
             "stocks_data_filename": 'STOCKS_GOOGL'
         })),
         features=[seven_indicators]
