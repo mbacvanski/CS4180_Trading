@@ -43,7 +43,7 @@ def visualize_experiment(filename: str):
     plot_profits(r)
     plt.show()
 
-    r.final_env.render()
+    r.final_env.render_together()
 
 
 def plot_profits(r: ExperimentResult):

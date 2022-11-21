@@ -71,7 +71,7 @@ Comparing the objective function ($\mathbb{E}_{\tau}\sum\ r$) in reinforcement l
 - short selling:
   - $log(2 - close_{curr} / close_{pre})+log(cost)$
 - otherwise:
-  - 0
+  - $0$
 
 so that maximize $\mathbb{E}_{\tau} \sum r$ 
 is equivalent to maximize $\mathbb{E}_{\tau}[\prod_{buying\ long}(r_{curr}/r_{pre}\ *\ cost) + \prod_{short\ selling}((2-r_{curr}/r_{pre})\ *\ cost)]$

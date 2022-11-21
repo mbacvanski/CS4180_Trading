@@ -135,5 +135,5 @@ def history_and_action(state: State, action: Action) -> np.ndarray:
     action_onehot = np.zeros(shape=len(Action))
     action_onehot[action.value] = 1
 
-    vec = np.hstack([state.history.flatten(), action_onehot])
+    vec = np.hstack([state.history.flatten(), state.position, action_onehot])
     return vec

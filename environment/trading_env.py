@@ -244,6 +244,38 @@ class TradingEnv(BaseEnv):
         self.render_profit(save)
         self.render_price(save)
 
+    def render_together(self, save=True) -> None:
+        fig, axs = plt.subplots(2)
+
+        axs[0].set_xlabel('trading days')
+        axs[0].set_ylabel('close price')
+        window_ticks = np.arange(len(self._position_history))
+        eps_price = self.raw_prices[self._start_tick:self._end_tick + 1]
+        axs[0].plot(eps_price)
+
+        short_ticks = []
+        long_ticks = []
+        flat_ticks = []
+        for i, tick in enumerate(window_ticks):
+            if self._position_history[i] == Position.SHORT:
+                short_ticks.append(tick)
+            elif self._position_history[i] == Position.LONG:
+                long_ticks.append(tick)
+            else:
+                flat_ticks.append(tick)
+
+        axs[0].plot(long_ticks, eps_price[long_ticks], 'g^', markersize=3, label="Long")
+        axs[0].plot(flat_ticks, eps_price[flat_ticks], 'bo', markersize=3, label="Flat")
+        axs[0].plot(short_ticks, eps_price[short_ticks], 'rv', markersize=3, label="Short")
+        axs[0].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
+
+        # profit history below
+        axs[1].set_xlabel('trading days')
+        axs[1].set_ylabel('profit')
+        axs[1].plot(self._profit_history)
+
+        plt.savefig(self.save_path + str(self._env_id) + '-price-profit.png')
+
     def close(self):
         import matplotlib.pyplot as plt
         plt.close()

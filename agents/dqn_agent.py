@@ -3,14 +3,16 @@ from typing import List
 
 import numpy as np
 import tqdm
-from keras.api._v2.keras import Sequential, Model
+from keras.api._v2.keras import Model, Sequential
 from keras.api._v2.keras.layers import Dense
-# from tensorflow.python.keras import Model
-# from tensorflow.python.keras.layers import Dense
 
 import environment
 from agents.agents import DQNConfig, FeatureExtractor
-from environment import Action, State
+from environment import Action, Position, State
+
+
+# from tensorflow.python.keras import Model
+# from tensorflow.python.keras.layers import Dense
 
 
 # from tensorflow.python.keras.models import Sequential
@@ -18,8 +20,10 @@ from environment import Action, State
 def create_model(n_features) -> Sequential:
     model = Sequential()
     model.add(Dense(20, input_shape=(1, n_features), activation='sigmoid'))
-    model.add(Dense(8, activation='sigmoid'))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(100, activation='sigmoid'))
+    model.add(Dense(40, activation='sigmoid'))
+    model.add(Dense(10, activation='sigmoid'))
+    model.add(Dense(1, activation='relu'))
     model.compile(loss='huber_loss', optimizer='adam', metrics=['accuracy'])
     return model
 
@@ -36,32 +40,34 @@ def dqn_agent(config: DQNConfig):
     buy_and_hold_profits = []
 
     for _ in tqdm.trange(config.num_episodes):
-        # reset the environment
         state = config.env.reset()
 
         state_history = [state.history]
 
-        # find me an action
-        action = epsilon_greedy_action_selection(state=state, action_space=allowed_actions,
-                                                 features=config.features, model=model, epsilon=config.epsilon)
-
         for timestep in range(config.max_timesteps):
-            # take the action and observe the next state and reward
+            if timestep == config.max_timesteps - 2:
+                # return to flat to accrue profit at the very end
+                if state.position == Position.SHORT:
+                    action = Action.BUY
+                elif state.position == Position.LONG:
+                    action = Action.SELL
+                else:
+                    action = Action.HOLD
+            else:
+                action = epsilon_greedy_action_selection(state=state, action_space=allowed_actions,
+                                                         features=config.features, model=model, epsilon=config.epsilon)
+
             next_state, reward, done, _ = config.env.step(action)
             state_history.append(next_state.history)
-            # pick the next action epsilon greedily
-            next_action = epsilon_greedy_action_selection(state=next_state, action_space=allowed_actions,
-                                                          features=config.features, model=model, epsilon=config.epsilon)
 
-            # train the model on this new data
             update_model(model=model, features=config.features, is_terminal=done, gamma=config.gamma, state=state,
                          action=action, reward=reward, next_state=next_state, action_space=allowed_actions)
 
             if done:
+                print('Breaking at timestep ', timestep)
                 break
             else:
                 state = next_state
-                action = next_action
 
         profits.append(config.env.final_profit())
         max_possible_profits.append(config.env.max_possible_profit())
