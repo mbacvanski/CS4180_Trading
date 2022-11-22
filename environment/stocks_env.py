@@ -33,6 +33,8 @@ class StocksEnv(TradingEnv):
         # set cost
         self.trade_fee_bid_percent = 0.01  # unit
         self.trade_fee_ask_percent = 0.005  # unit
+        # self.trade_fee_bid_percent = 0  # unit
+        # self.trade_fee_ask_percent = 0  # unit
 
     # override
     def _process_data(self, start_idx: int = None) -> Any:
@@ -106,6 +108,8 @@ class StocksEnv(TradingEnv):
             step_reward = np.log(2 - ratio) + cost
 
         step_reward = float(step_reward)
+
+        # return self.final_profit()
 
         return step_reward
 

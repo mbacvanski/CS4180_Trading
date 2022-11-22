@@ -33,21 +33,12 @@ def dqn_agent(config: DQNConfig):
     max_possible_profits = []
     buy_and_hold_profits = []
 
-    for _ in tqdm.tqdm(range(config.num_episodes)):
+    for episode in tqdm.tqdm(range(config.num_episodes)):
         state = config.env.reset()
 
         state_history = [state.history]
 
-        for timestep in tqdm.tqdm(range(config.max_timesteps), position=0, leave=True):
-            # if timestep == config.max_timesteps - 2:
-            #     # return to flat to accrue profit at the very end
-            #     if state.position == Position.SHORT:
-            #         action = Action.BUY
-            #     elif state.position == Position.LONG:
-            #         action = Action.SELL
-            #     else:
-            #         action = Action.HOLD
-            # else:
+        for _ in tqdm.tqdm(range(config.max_timesteps), position=0, leave=True):
             action = epsilon_greedy_action_selection(state=state, action_space=allowed_actions,
                                                      features=config.features, model=model, epsilon=config.epsilon)
 
@@ -58,7 +49,6 @@ def dqn_agent(config: DQNConfig):
                          action=action, reward=reward, next_state=next_state, action_space=allowed_actions)
 
             if done:
-                # print('Breaking at timestep ', timestep)
                 break
             else:
                 state = next_state
@@ -67,6 +57,8 @@ def dqn_agent(config: DQNConfig):
         max_possible_profits.append(config.env.max_possible_profit())
         buy_and_hold_profits.append(state_history[-1][0][0] - state_history[0][-1][1])
         # assuming buy at first open, sell at last close
+
+        config.env.render_together(save=True, filename=f'data/plots/dqn/dqn_episode_{episode}_price_profit.png')
 
     return config.env, profits, max_possible_profits, buy_and_hold_profits
 
