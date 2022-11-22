@@ -10,12 +10,12 @@ from utils.experiment import ExperimentResult, visualize_experiment
 
 def main():
     config = DQNConfig(
-        num_episodes=50,
-        max_timesteps=50,  # this must equal eps_length
+        num_episodes=1,
+        max_timesteps=10,  # this must equal eps_length
         gamma=0.99,
         epsilon=0.01,
         env=StocksEnv(EasyDict({
-            "env_id": 'stocks-dqn', "eps_length": 50,
+            "env_id": 'stocks-dqn', "eps_length": 10,
             "window_size": 200, "train_range": None, "test_range": None,
             "stocks_data_filename": 'STOCKS_GOOGL'
         })),

@@ -3,7 +3,7 @@ import os
 from abc import abstractmethod
 from cmath import inf
 from enum import Enum
-from typing import Any
+from typing import Any, List
 
 import gym
 import numpy as np
@@ -46,7 +46,7 @@ class Position(int, Enum):
 @dataclasses.dataclass
 class State:
     history: np.ndarray
-    position: Position
+    position_history: List[Position]
     tick: float
 
 
@@ -85,7 +85,6 @@ def transform(position: Position, action: Action) -> Any:
     return position, False
 
 
-# @ENV_REGISTRY.register('base_trading')
 class TradingEnv(BaseEnv):
 
     def __init__(self, cfg: EasyDict) -> None:
@@ -159,6 +158,13 @@ class TradingEnv(BaseEnv):
     def random_action(self) -> Any:
         return np.array([self.action_space.sample()])
 
+    def position_history(self, n) -> List[float]:
+        # Returns the n most recent positions
+        if n < len(self._position) - 1:
+            return self._position
+        else:
+            return self._position[-n:]
+
     def step(self, action: Action) -> BaseEnvTimestep:
         self._done = False
         self._current_tick += 1
@@ -196,7 +202,9 @@ class TradingEnv(BaseEnv):
 
         tick = (self._current_tick - self._last_trade_tick) / self._cfg.eps_length
 
-        return State(history=obs, position=self._position.value, tick=tick)
+        return State(history=obs,
+                     position_history=self._position_history[-min(len(self._position_history), self.window_size):],
+                     tick=tick)
 
     def render_profit(self, save=False):
         plt.clf()
@@ -239,12 +247,11 @@ class TradingEnv(BaseEnv):
     def final_profit(self) -> float:
         return self._profit_history[-1]
 
-
     def render(self, save=True) -> None:
         self.render_profit(save)
         self.render_price(save)
 
-    def render_together(self, save=True) -> None:
+    def render_together(self, save=True, filename=None) -> None:
         fig, axs = plt.subplots(2)
 
         axs[0].set_xlabel('trading days')
@@ -274,7 +281,9 @@ class TradingEnv(BaseEnv):
         axs[1].set_ylabel('profit')
         axs[1].plot(self._profit_history)
 
-        plt.savefig(self.save_path + str(self._env_id) + '-price-profit.png')
+        if not filename:
+            filename = self.save_path + str(self._env_id) + '-price-profit.png'
+        plt.savefig(filename)
 
     def close(self):
         import matplotlib.pyplot as plt

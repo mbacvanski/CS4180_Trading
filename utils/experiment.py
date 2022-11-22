@@ -27,10 +27,15 @@ class ExperimentResult:
             .astimezone(tz=tz.gettz('America/Boston')).strftime('%Y-%m-%d--%H-%M-%S')
 
     def to_file(self):
-        filename = f'data/{self.algorithm}_{self.timestamp}.pickle'
-        with open(filename, 'wb') as f:
+        with open(self.pickle_filename(), 'wb') as f:
             pickle.dump(self, f)
-            return filename
+            return self.pickle_filename()
+
+    def pickle_filename(self) -> str:
+        return f'data/{self.algorithm}_{self.timestamp}.pickle'
+
+    def name(self) -> str:
+        return f'{self.algorithm}_{self.timestamp}'
 
     @staticmethod
     def from_file(path: str) -> 'ExperimentResult':
@@ -41,17 +46,15 @@ class ExperimentResult:
 def visualize_experiment(filename: str):
     r = ExperimentResult.from_file(filename)
     plot_profits(r)
-    plt.show()
-
-    r.final_env.render_together()
+    r.final_env.render_together(save=True, filename='data/plots/' + str(r.name()) + "-price-profits.png")
 
 
 def plot_profits(r: ExperimentResult):
     plt.plot(range(0, len(r.profits)), r.profits, 'blue', label='Agent profit')
-    # plt.plot(range(0, len(r.profits)), r.max_possible_profits, 'green', label='Maximum possible profits')
     plt.plot(range(0, len(r.buy_and_hold_profits)), r.buy_and_hold_profits, 'green', label='Buy and hold profit')
 
     plt.title(f'Profits per training episode. Avg={np.average(r.profits)}')
     plt.xlabel('Episode')
     plt.ylabel('Profit')
     plt.legend()
+    plt.savefig('data/plots/' + str(r.name()) + "-profits.png")
