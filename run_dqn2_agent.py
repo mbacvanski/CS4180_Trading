@@ -98,7 +98,7 @@ def main():
 
         'max_time_step_per_episode': 200,
 
-        'total_training_time_step': 500_000,
+        'total_training_time_step': 750_000,
 
         'epsilon_start_value': 1.0,
         'epsilon_end_value': 0.01,
@@ -112,7 +112,7 @@ def main():
         'batch_size': 32,
         'learning_rate': 1e-3,
 
-        'plot_sampling_step': 69,  # every x episodes
+        'final_policy_num_plots': 20,
 
         'model_name': "stocks_google.pt",
         'name': name

@@ -300,6 +300,8 @@ def train_dqn_agent(env, params):
     # reset the environment
     obs = env.reset()
 
+    num_episodes = params['total_training_time_step'] // params['max_time_step_per_episode']
+
     # start training
     pbar = tqdm.trange(params['total_training_time_step'])
     last_best_return = 0
@@ -337,7 +339,7 @@ def train_dqn_agent(env, params):
                 f"Eps={eps_t:.5f}"
             )
 
-            if episode_idx % params['plot_sampling_step'] == 0:
+            if episode_idx > num_episodes - params['final_policy_num_plots']:  # plot the last x episodes
                 env.render_together(save=True, filename=f'data/plots/dqn2_{params["name"]}/episode_{episode_idx}')
 
             # reset the environment
