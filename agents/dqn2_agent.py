@@ -311,6 +311,9 @@ def train_dqn_agent(env, params):
                 f"Eps={eps_t:.5f}"
             )
 
+            if episode_idx % params['plot_sampling_step'] == 0:
+                env.render_together(save=True, filename=f'data/plots/dqn2/episode_{episode_idx}')
+
             # reset the environment
             episode_t, rewards = 0, []
             profits.append(env.final_profit())

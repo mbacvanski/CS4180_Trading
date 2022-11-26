@@ -1,7 +1,7 @@
 import dataclasses
 import time
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import dill as pickle
 import numpy as np
@@ -15,10 +15,12 @@ from environment import TradingEnv
 @dataclasses.dataclass
 class ExperimentResult:
     config: AgentConfig
-    final_env: TradingEnv
+    final_env: Optional[TradingEnv]
     profits: List[float]
-    max_possible_profits: List[float]
-    buy_and_hold_profits: List[float]
+    returns: Optional[List[float]]
+    loss: Optional[List[float]]
+    max_possible_profits: Optional[List[float]]
+    buy_and_hold_profits: Optional[List[float]]
     algorithm: str
     timestamp: str = dataclasses.field(init=False)
 

@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 
 from agents.dqn2_agent import train_dqn_agent
 from environment import Action, BaseEnvTimestep, State, StocksEnv
+from utils.experiment import ExperimentResult
 from utils.plotting import plot_curves
 
 
@@ -87,7 +88,7 @@ def main():
         'observation_dim': len(initial_obs),
         'action_dim': 5,
         'action_space': env.action_space,
-        'hidden_layer_num': 4,
+        'hidden_layer_num': 8,
         'hidden_layer_dim': 512,
         'gamma': 0.99,
 
@@ -107,6 +108,8 @@ def main():
         'batch_size': 32,
         'learning_rate': 1e-3,
 
+        'plot_sampling_step': 69,  # every x episodes
+
         'model_name': "stocks_google.pt"
     }
 
@@ -120,6 +123,17 @@ def main():
     plt.clf()
     plot_curves([np.array([train_profits])], ['dqn'], ['r'], 'profit', 'DQN2')
     plt.savefig('dqn2_profits')
+
+    ExperimentResult(
+        config=train_parameters,
+        final_env=None,
+        profits=train_profits,
+        returns=train_returns,
+        loss=train_loss,
+        max_possible_profits=None,
+        buy_and_hold_profits=None,
+        algorithm='dqn2'
+    ).to_file()
 
 
 if __name__ == '__main__':
