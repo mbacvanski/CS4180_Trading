@@ -170,17 +170,17 @@ class Stocks_RL():
         Plots
         """
             # True price, buy points and sell points
-        # plt.plot(range(stock_env.prices.shape[0]), stock_env.prices, linewidth=1)
-        # plt.scatter(self.buy_points, self.prices[self.buy_points], s=10, c="r")
-        # plt.scatter(self.sell_points, self.prices[self.sell_points], s=10, c="g")
+        plt.plot(range(stock_env.prices.shape[0]), stock_env.prices, linewidth=1)
+        plt.scatter(self.buy_points, self.prices[self.buy_points], s=10, c="r")
+        plt.scatter(self.sell_points, self.prices[self.sell_points], s=10, c="g")
 
             # Profits, trends
         # m, b = np.polyfit(range(len(self.profits)), self.profits, 1)
-        m, b = np.polyfit(range(len(self.trial_profits)), self.trial_profits, 1)
+        # m, b = np.polyfit(range(len(self.trial_profits)), self.trial_profits, 1)
         # plt.plot(range(len(self.profits)), self.profits)
         # plt.plot(range(len(self.profits)), range(len(self.profits))*m + b)
-        plt.plot(range(len(self.trial_profits)), range(len(self.trial_profits))*m + b)
-        plt.plot(range(len(self.trial_profits)), self.trial_profits)
+        # plt.plot(range(len(self.trial_profits)), range(len(self.trial_profits))*m + b)
+        # plt.plot(range(len(self.trial_profits)), self.trial_profits)
 
         plt.grid()
         plt.show()

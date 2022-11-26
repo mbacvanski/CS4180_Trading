@@ -109,8 +109,6 @@ class StocksEnv(TradingEnv):
 
         step_reward = float(step_reward)
 
-        # return self.final_profit()
-
         return step_reward
 
     # override

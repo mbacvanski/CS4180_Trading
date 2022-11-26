@@ -10,7 +10,7 @@ from utils.experiment import ExperimentResult, visualize_experiment
 
 def main():
     config = DQNConfig(
-        num_episodes=100,
+        num_episodes=10,
         max_timesteps=200,  # this must equal eps_length
         gamma=0.99,
         epsilon=0.01,
