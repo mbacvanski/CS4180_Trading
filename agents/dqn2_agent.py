@@ -22,7 +22,7 @@ def customized_weights_init(m):
 
 
 class DeepQNet(nn.Module):
-    def __init__(self, input_dim, num_hidden_layer, dim_hidden_layer, output_dim):
+    def __init__(self, input_dim, num_hidden_layer, dim_hidden_layer, output_dim, architecture=None):
         super(DeepQNet, self).__init__()
 
         """CODE HERE: construct your Deep neural network
@@ -37,22 +37,27 @@ class DeepQNet(nn.Module):
         #     self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=dim_hidden_layer))
         #     self.layers.append(nn.ReLU())
         # self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=output_dim))
-
-        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(7, 1)))
+        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(20, 1)))
         self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(2, 2), stride=(1, 1)))
+        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(1, 1)))
 
-        # initialize second set of CONV => RELU => POOL layers
         self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
         self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(4, 4), stride=(1, 1)))
+        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
 
-        # initialize first (and only) set of FC => RELU layers
+        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(ReLU())
+        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
+
+        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(ReLU())
+        self.layers.append(MaxPool2d(kernel_size=(8, 1), stride=(2, 1)))
+
         self.layers.append(Flatten())
-        self.layers.append(Linear(in_features=543, out_features=128))
+        self.layers.append(Linear(in_features=70, out_features=64))
         self.layers.append(ReLU())
 
-        self.layers.append(Linear(in_features=128, out_features=5))
+        self.layers.append(Linear(in_features=64, out_features=5))
 
     def forward(self, x):
         """CODE HERE: implement your forward propagation
@@ -333,11 +338,12 @@ def train_dqn_agent(env, params):
             )
 
             if episode_idx % params['plot_sampling_step'] == 0:
-                env.render_together(save=True, filename=f'data/plots/dqn2/episode_{episode_idx}')
+                env.render_together(save=True, filename=f'data/plots/dqn2_{params["name"]}/episode_{episode_idx}')
 
             # reset the environment
             episode_t, rewards = 0, []
             profits.append(env.final_profit())
+            env.close()
             obs = env.reset()
         else:
             # increment

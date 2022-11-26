@@ -1,4 +1,5 @@
 import random
+import sys
 
 import gym
 import numpy as np
@@ -72,6 +73,8 @@ class StocksEnvWithFeatureVectors(StocksEnv):
 
 
 def main():
+    name = sys.argv[1]
+
     np.random.seed(1234)
     random.seed(1234)
     torch.manual_seed(1234)
@@ -111,19 +114,20 @@ def main():
 
         'plot_sampling_step': 69,  # every x episodes
 
-        'model_name': "stocks_google.pt"
+        'model_name': "stocks_google.pt",
+        'name': name
     }
 
     # create experiment
     train_returns, train_loss, train_profits = train_dqn_agent(env, train_parameters)
     plot_curves([np.array([train_returns])], ['dqn'], ['r'], 'discounted return', 'DQN2')
-    plt.savefig('dqn2_returns')
+    plt.savefig(f'dqn2_returns_{name}')
     plt.clf()
     plot_curves([np.array([train_loss])], ['dqn'], ['r'], 'training loss', 'DQN2')
-    plt.savefig('dqn2_loss')
+    plt.savefig(f'dqn2_loss_{name}')
     plt.clf()
     plot_curves([np.array([train_profits])], ['dqn'], ['r'], 'profit', 'DQN2')
-    plt.savefig('dqn2_profits')
+    plt.savefig(f'dqn2_profits_{name}')
 
     ExperimentResult(
         config=train_parameters,
@@ -133,7 +137,7 @@ def main():
         loss=train_loss,
         max_possible_profits=None,
         buy_and_hold_profits=None,
-        algorithm='dqn2'
+        algorithm='dqn2_name'
     ).to_file()
 
 
