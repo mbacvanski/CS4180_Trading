@@ -1,7 +1,9 @@
 import numpy as np
 import torch
-from torch import nn
 import tqdm
+from torch import nn
+from torch.nn import Conv2d, Flatten, Linear, MaxPool2d, ReLU
+
 
 # customized weight initialization
 def customized_weights_init(m):
@@ -19,7 +21,6 @@ def customized_weights_init(m):
         nn.init.constant_(m.bias, 0)
 
 
-# %%
 class DeepQNet(nn.Module):
     def __init__(self, input_dim, num_hidden_layer, dim_hidden_layer, output_dim):
         super(DeepQNet, self).__init__()
@@ -28,19 +29,36 @@ class DeepQNet(nn.Module):
         """
 
         self.layers = nn.ModuleList()
-        self.input_size = input_dim
+        # self.input_size = input_dim
+        #
+        # self.layers.append(nn.Linear(in_features=input_dim, out_features=dim_hidden_layer))
+        # self.layers.append(nn.ReLU())
+        # for i in range(num_hidden_layer):
+        #     self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=dim_hidden_layer))
+        #     self.layers.append(nn.ReLU())
+        # self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=output_dim))
 
-        self.layers.append(nn.Linear(in_features=input_dim, out_features=dim_hidden_layer))
-        self.layers.append(nn.ReLU())
-        for i in range(num_hidden_layer):
-            self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=dim_hidden_layer))
-            self.layers.append(nn.ReLU())
-        self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=output_dim))
+        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(7, 1)))
+        self.layers.append(ReLU())
+        self.layers.append(MaxPool2d(kernel_size=(2, 2), stride=(1, 1)))
+
+        # initialize second set of CONV => RELU => POOL layers
+        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(ReLU())
+        self.layers.append(MaxPool2d(kernel_size=(4, 4), stride=(1, 1)))
+
+        # initialize first (and only) set of FC => RELU layers
+        self.layers.append(Flatten())
+        self.layers.append(Linear(in_features=543, out_features=128))
+        self.layers.append(ReLU())
+
+        self.layers.append(Linear(in_features=128, out_features=5))
 
     def forward(self, x):
         """CODE HERE: implement your forward propagation
         """
-        for layer in self.layers:
+        for idx, layer in enumerate(self.layers):
+            # print(f'On layer {idx}({layer.__class__}) with input shape {x.size()}')
             x = layer(x)
         return x
 
@@ -179,7 +197,8 @@ class DQNAgent(object):
         if np.random.random() < eps:  # with probability eps, the agent selects a random action
             action = self.action_space.sample()
         else:  # with probability 1 - eps, the agent selects a greedy policy
-            obs = self._arr_to_tensor(obs).view(1, -1)
+            obs = self._arr_to_tensor(obs)
+            # obs = self._arr_to_tensor(obs).view(1, -1)
             with torch.no_grad():
                 q_values = self.behavior_policy_net(obs)
                 action = q_values.max(dim=1)[1].item()
@@ -233,7 +252,7 @@ class DQNAgent(object):
 
     # auxiliary functions
     def _arr_to_tensor(self, arr):
-        arr = np.array(arr)
+        arr = np.array(arr).reshape((-1, 1, arr.shape[0], arr.shape[1]))
         arr_tensor = torch.from_numpy(arr).float().to(self.device)
         return arr_tensor
 
@@ -243,10 +262,12 @@ class DQNAgent(object):
         # get the numpy arrays
         obs_arr, action_arr, reward_arr, next_obs_arr, done_arr = batch_data
         # convert to tensors
-        batch_data_tensor['obs'] = torch.tensor(obs_arr, dtype=torch.float32).to(self.device)
+        batch_data_tensor['obs'] = torch.tensor(obs_arr, dtype=torch.float32).to(self.device).reshape(
+            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
         batch_data_tensor['action'] = torch.tensor(action_arr).long().view(-1, 1).to(self.device)
         batch_data_tensor['reward'] = torch.tensor(reward_arr, dtype=torch.float32).view(-1, 1).to(self.device)
-        batch_data_tensor['next_obs'] = torch.tensor(next_obs_arr, dtype=torch.float32).to(self.device)
+        batch_data_tensor['next_obs'] = torch.tensor(next_obs_arr, dtype=torch.float32).to(self.device).reshape(
+            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
         batch_data_tensor['done'] = torch.tensor(done_arr, dtype=torch.float32).view(-1, 1).to(self.device)
 
         return batch_data_tensor

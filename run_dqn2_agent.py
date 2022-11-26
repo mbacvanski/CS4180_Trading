@@ -7,7 +7,7 @@ from easydict import EasyDict
 from matplotlib import pyplot as plt
 
 from agents.dqn2_agent import train_dqn_agent
-from environment import Action, BaseEnvTimestep, State, StocksEnv
+from environment import StocksEnv
 from utils.experiment import ExperimentResult
 from utils.plotting import plot_curves
 
@@ -63,11 +63,12 @@ class StocksEnvWithFeatureVectors(StocksEnv):
 
     def _get_observation(self) -> np.ndarray:
         observation = super()._get_observation()
-        position_history = np.zeros(shape=(observation.history.shape[0]))
-        position_history[0:len(observation.position_history)] = observation.position_history
+        position_history = np.zeros(shape=(observation.history.shape[0], 1))
+        position_history[-len(observation.position_history):, 0] = observation.position_history
 
         # gives a warning because it's not a state but shut the up
-        return np.hstack([observation.history.flatten(), position_history])
+        # align the position history with where the stock was at that point
+        return np.hstack([observation.history, position_history])
 
 
 def main():
@@ -85,11 +86,11 @@ def main():
 
     # create training parameters
     train_parameters = {
-        'observation_dim': len(initial_obs),
+        'observation_dim': initial_obs.shape,
         'action_dim': 5,
         'action_space': env.action_space,
-        'hidden_layer_num': 8,
-        'hidden_layer_dim': 512,
+        'hidden_layer_num': 4,
+        'hidden_layer_dim': 128,
         'gamma': 0.99,
 
         'max_time_step_per_episode': 200,
