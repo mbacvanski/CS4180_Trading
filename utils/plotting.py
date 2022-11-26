@@ -38,4 +38,4 @@ def plot_curves(arr_list, legend_list, color_list, ylabel, fig_title):
     ax.set_title(f"{fig_title}")
     ax.legend(handles=h_list)
 
-    plt.show()
+    # plt.show()

@@ -166,7 +166,8 @@ class DQNAgent(object):
         self.target_policy_net.load_state_dict(self.behavior_policy_net.state_dict())
 
         # send the agent to a specific device: cpu or gpu
-        self.device = torch.device("cpu")
+        # self.device = torch.device("cpu")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.behavior_policy_net.to(self.device)
         self.target_policy_net.to(self.device)
 

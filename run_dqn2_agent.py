@@ -88,7 +88,7 @@ def main():
         'action_dim': 5,
         'action_space': env.action_space,
         'hidden_layer_num': 4,
-        'hidden_layer_dim': 128,
+        'hidden_layer_dim': 512,
         'gamma': 0.99,
 
         'max_time_step_per_episode': 200,
@@ -118,7 +118,7 @@ def main():
     plot_curves([np.array([train_loss])], ['dqn'], ['r'], 'training loss', 'DQN2')
     plt.savefig('dqn2_loss')
     plt.clf()
-    plot_curves([np.array([train_profits])], ['dqn'], ['r'], 'training loss', 'DQN2')
+    plot_curves([np.array([train_profits])], ['dqn'], ['r'], 'profit', 'DQN2')
     plt.savefig('dqn2_profits')
 
 
