@@ -3,6 +3,7 @@ import os
 from abc import abstractmethod
 from cmath import inf
 from enum import Enum
+from pathlib import Path
 from typing import Any, List
 
 import gym
@@ -194,7 +195,8 @@ class TradingEnv(BaseEnv):
             info['max_possible_profit'] = np.log(self.max_possible_profit())
             info['final_eval_reward'] = self._total_reward
 
-        return BaseEnvTimestep(observation, step_reward, self._done, info)
+        # return BaseEnvTimestep(observation, step_reward, self._done, info)
+        return BaseEnvTimestep(observation, self.final_profit(), self._done, info)
 
     def _get_observation(self) -> State:
         obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):
@@ -251,7 +253,7 @@ class TradingEnv(BaseEnv):
         self.render_profit(save)
         self.render_price(save)
 
-    def render_together(self, save=True, filename=None) -> None:
+    def render_together(self, save=True, filename:str=None) -> None:
         fig, axs = plt.subplots(2)
 
         axs[0].set_xlabel('trading days')
@@ -283,6 +285,8 @@ class TradingEnv(BaseEnv):
 
         if not filename:
             filename = self.save_path + str(self._env_id) + '-price-profit.png'
+
+        Path(filename[:filename.rindex('/')]).mkdir(parents=True, exist_ok=True)
         plt.savefig(filename)
 
     def close(self):

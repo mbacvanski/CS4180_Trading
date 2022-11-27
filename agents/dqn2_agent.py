@@ -339,7 +339,8 @@ def train_dqn_agent(env, params):
                 f"Eps={eps_t:.5f}"
             )
 
-            if episode_idx > num_episodes - params['final_policy_num_plots']:  # plot the last x episodes
+            # plot the last x episodes
+            if episode_idx == 1 or episode_idx > num_episodes - params['final_policy_num_plots']:
                 env.render_together(save=True, filename=f'data/plots/dqn2_{params["name"]}/episode_{episode_idx}')
 
             # reset the environment
