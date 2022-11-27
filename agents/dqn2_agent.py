@@ -268,7 +268,7 @@ class DQNAgent(object):
         obs_arr, action_arr, reward_arr, next_obs_arr, done_arr = batch_data
         # convert to tensors
         batch_data_tensor['obs'] = torch.tensor(obs_arr, dtype=torch.float32).to(self.device).reshape(
-            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
+            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))  # for CNN
         batch_data_tensor['action'] = torch.tensor(action_arr).long().view(-1, 1).to(self.device)
         batch_data_tensor['reward'] = torch.tensor(reward_arr, dtype=torch.float32).view(-1, 1).to(self.device)
         batch_data_tensor['next_obs'] = torch.tensor(next_obs_arr, dtype=torch.float32).to(self.device).reshape(
@@ -304,7 +304,7 @@ def train_dqn_agent(env, params):
 
     # start training
     pbar = tqdm.trange(params['total_training_time_step'])
-    last_best_return = 0
+    last_best_return = np.negative(np.inf)
     for t in pbar:
         # scheduled epsilon at time step t
         eps_t = my_schedule.get_value(t)

@@ -75,7 +75,7 @@ def update_model(model: Sequential, features: List[FeatureExtractor], is_termina
         # randomize action ordering to break ties
         q_actions = [compute_q_value(next_state, next_action, features, model) for
                      next_action in sorted(action_space, key=lambda k: random.random())]
-        max_q = max(q_actions)
+        max_q = np.mean(q_actions)
         td_target = np.array([reward + gamma * max_q])  # update using TD target
         # print(td_target)
         model.fit(x=x, y=td_target, verbose=False)
