@@ -210,7 +210,7 @@ class DQNAgent(object):
         return action
 
     # update behavior policy
-    def update_behavior_policy(self, batch_data):
+    def update_behavior_policy(self, batch_data, timestep):
         # convert batch data to tensor and put them on device
         batch_data_tensor = self._batch_to_tensor(batch_data)
 
@@ -225,19 +225,22 @@ class DQNAgent(object):
                 Compute the predicted Q values using the behavior policy network
         """
         q_estimate = self.behavior_policy_net(obs_tensor).gather(dim=1, index=actions_tensor).flatten()
-        q_max = torch.max(self.target_policy_net(next_obs_tensor), dim=1).values
-        td_target = rewards_tensor.flatten() + self.params['gamma'] * q_max
+        with torch.no_grad():
+            q_max = torch.max(self.target_policy_net(next_obs_tensor), dim=1).values
 
-        done_idxs = (dones_tensor == 1).nonzero(as_tuple=True)[0]
-        td_target[done_idxs] = rewards_tensor[done_idxs, 0]
+            td_target = rewards_tensor.flatten() + self.params['gamma'] * q_max
+            done_idxs = (dones_tensor == 1).nonzero(as_tuple=True)[0]
+            td_target[done_idxs] = rewards_tensor[done_idxs, 0]
+
+        loss_accumulation_steps = 200
 
         # compute the loss
         td_loss = torch.nn.MSELoss()(q_estimate, td_target)
+        td_loss.backward()
 
         # minimize the loss
-        self.behavior_policy_net.zero_grad()
-        td_loss.backward()
         self.optimizer.step()
+        self.behavior_policy_net.zero_grad()
 
         return td_loss.item()
 
@@ -267,13 +270,13 @@ class DQNAgent(object):
         # get the numpy arrays
         obs_arr, action_arr, reward_arr, next_obs_arr, done_arr = batch_data
         # convert to tensors
-        batch_data_tensor['obs'] = torch.tensor(obs_arr, dtype=torch.float32).to(self.device).reshape(
+        batch_data_tensor['obs'] = torch.as_tensor(obs_arr, dtype=torch.float32, device=self.device).reshape(
             (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))  # for CNN
-        batch_data_tensor['action'] = torch.tensor(action_arr).long().view(-1, 1).to(self.device)
-        batch_data_tensor['reward'] = torch.tensor(reward_arr, dtype=torch.float32).view(-1, 1).to(self.device)
-        batch_data_tensor['next_obs'] = torch.tensor(next_obs_arr, dtype=torch.float32).to(self.device).reshape(
+        batch_data_tensor['action'] = torch.as_tensor(action_arr, device=self.device).long().view(-1, 1)
+        batch_data_tensor['reward'] = torch.as_tensor(reward_arr, dtype=torch.float32, device=self.device).view(-1, 1)
+        batch_data_tensor['next_obs'] = torch.as_tensor(next_obs_arr, dtype=torch.float32, device=self.device).reshape(
             (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
-        batch_data_tensor['done'] = torch.tensor(done_arr, dtype=torch.float32).view(-1, 1).to(self.device)
+        batch_data_tensor['done'] = torch.as_tensor(done_arr, dtype=torch.float32, device=self.device).view(-1, 1)
 
         return batch_data_tensor
 
@@ -325,8 +328,8 @@ def train_dqn_agent(env, params):
             for r in reversed(rewards):
                 G = r + params['gamma'] * G
 
-            if G > last_best_return:
-                torch.save(my_agent.behavior_policy_net.state_dict(), f"./{params['model_name']}")
+            # if G > last_best_return:
+            #     torch.save(my_agent.behavior_policy_net.state_dict(), f"./{params['model_name']}")
 
             # store the return
             train_returns.append(G)
@@ -359,7 +362,7 @@ def train_dqn_agent(env, params):
                 """ CODE HERE:
                     Update the behavior policy network
                 """
-                train_loss.append(my_agent.update_behavior_policy(replay_buffer.sample_batch(params['batch_size'])))
+                train_loss.append(my_agent.update_behavior_policy(replay_buffer.sample_batch(params['batch_size']), t))
 
             # update the target model
             if not np.mod(t, params['freq_update_target_policy']):
