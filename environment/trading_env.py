@@ -195,8 +195,8 @@ class TradingEnv(BaseEnv):
             info['max_possible_profit'] = np.log(self.max_possible_profit())
             info['final_eval_reward'] = self._total_reward
 
-        return BaseEnvTimestep(observation, step_reward, self._done, info)
-        # return BaseEnvTimestep(observation, self.final_profit(), self._done, info)
+        # return BaseEnvTimestep(observation, step_reward, self._done, info)
+        return BaseEnvTimestep(observation, self._profit_history[-1] - self._profit_history[-2], self._done, info)
 
     def _get_observation(self) -> State:
         obs = np.array(self.signal_features[(self._current_tick - self.window_size + 1):

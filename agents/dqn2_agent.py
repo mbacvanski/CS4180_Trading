@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import tqdm
 from torch import nn
-from torch.nn import Conv2d, Flatten, Linear, MaxPool2d, ReLU
+from torch.nn import Conv2d, Flatten, LazyLinear, Linear, MaxPool2d, ReLU
 
 
 # customized weight initialization
@@ -13,51 +13,52 @@ def customized_weights_init(m):
     if isinstance(m, nn.Conv2d):
         # init the params using uniform
         nn.init.xavier_uniform_(m.weight, gain=gain)
-        nn.init.constant_(m.bias, 0)
+        nn.init.constant_(m.bias, 1)
     # init the linear layer
     if isinstance(m, nn.Linear):
         # init the params using uniform
         nn.init.xavier_uniform_(m.weight, gain=gain)
-        nn.init.constant_(m.bias, 0)
+        nn.init.constant_(m.bias, 1)
 
 
 class DeepQNet(nn.Module):
-    def __init__(self, input_dim, num_hidden_layer, dim_hidden_layer, output_dim, architecture=None):
+    def __init__(self):
         super(DeepQNet, self).__init__()
 
         """CODE HERE: construct your Deep neural network
         """
 
         self.layers = nn.ModuleList()
-        # self.input_size = input_dim
-        #
-        # self.layers.append(nn.Linear(in_features=input_dim, out_features=dim_hidden_layer))
-        # self.layers.append(nn.ReLU())
-        # for i in range(num_hidden_layer):
-        #     self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=dim_hidden_layer))
-        #     self.layers.append(nn.ReLU())
-        # self.layers.append(nn.Linear(in_features=dim_hidden_layer, out_features=output_dim))
-        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(20, 1)))
-        self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(1, 1)))
 
-        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(Linear(in_features=1400, out_features=500))
         self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
-
-        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(LazyLinear(out_features=250))
         self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
-
-        self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(10, 1)))
+        self.layers.append(LazyLinear(out_features=250))
         self.layers.append(ReLU())
-        self.layers.append(MaxPool2d(kernel_size=(8, 1), stride=(2, 1)))
+        self.layers.append(LazyLinear(out_features=5))
 
-        self.layers.append(Flatten())
-        self.layers.append(Linear(in_features=70, out_features=64))
-        self.layers.append(ReLU())
+        # self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(3, 1)))
+        # self.layers.append(ReLU())
+        # self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(1, 1)))
 
-        self.layers.append(Linear(in_features=64, out_features=5))
+        # self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(4, 1)))
+        # self.layers.append(ReLU())
+        # self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
+
+        # self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(8, 1)))
+        # self.layers.append(ReLU())
+        # self.layers.append(MaxPool2d(kernel_size=(4, 1), stride=(2, 1)))
+
+        # self.layers.append(Conv2d(in_channels=1, out_channels=1, kernel_size=(16, 1)))
+        # self.layers.append(ReLU())
+        # self.layers.append(MaxPool2d(kernel_size=(8, 1), stride=(2, 1)))
+
+        # self.layers.append(Flatten())
+        # self.layers.append(LazyLinear(out_features=500))
+        # self.layers.append(ReLU())
+
+        # self.layers.append(LazyLinear(out_features=5))
 
     def forward(self, x):
         """CODE HERE: implement your forward propagation
@@ -173,23 +174,15 @@ class DQNAgent(object):
         # executable actions
         self.action_space = params['action_space']
 
-        # create behavior policy network
-        self.behavior_policy_net = DeepQNet(input_dim=params['observation_dim'],
-                                            num_hidden_layer=params['hidden_layer_num'],
-                                            dim_hidden_layer=params['hidden_layer_dim'],
-                                            output_dim=params['action_dim'])
-        # create target network
-        self.target_policy_net = DeepQNet(input_dim=params['observation_dim'],
-                                          num_hidden_layer=params['hidden_layer_num'],
-                                          dim_hidden_layer=params['hidden_layer_dim'],
-                                          output_dim=params['action_dim'])
+        # create behavior and target policy network
+        self.behavior_policy_net = DeepQNet()
+        self.target_policy_net = DeepQNet()
 
         # initialize target network with behavior network
-        self.behavior_policy_net.apply(customized_weights_init)
-        self.target_policy_net.load_state_dict(self.behavior_policy_net.state_dict())
+        # self.behavior_policy_net.apply(customized_weights_init)
+        # self.target_policy_net.load_state_dict(self.behavior_policy_net.state_dict())
 
         # send the agent to a specific device: cpu or gpu
-        # self.device = torch.device("cpu")
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.behavior_policy_net.to(self.device)
         self.target_policy_net.to(self.device)
@@ -203,14 +196,13 @@ class DQNAgent(object):
             action = self.action_space.sample()
         else:  # with probability 1 - eps, the agent selects a greedy policy
             obs = self._arr_to_tensor(obs)
-            # obs = self._arr_to_tensor(obs).view(1, -1)
             with torch.no_grad():
                 q_values = self.behavior_policy_net(obs)
                 action = q_values.max(dim=1)[1].item()
         return action
 
     # update behavior policy
-    def update_behavior_policy(self, batch_data, timestep):
+    def update_behavior_policy(self, batch_data):
         # convert batch data to tensor and put them on device
         batch_data_tensor = self._batch_to_tensor(batch_data)
 
@@ -229,10 +221,8 @@ class DQNAgent(object):
             q_max = torch.max(self.target_policy_net(next_obs_tensor), dim=1).values
 
             td_target = rewards_tensor.flatten() + self.params['gamma'] * q_max
-            done_idxs = (dones_tensor == 1).nonzero(as_tuple=True)[0]
-            td_target[done_idxs] = rewards_tensor[done_idxs, 0]
-
-        loss_accumulation_steps = 200
+            # done_idxs = (dones_tensor == 1).nonzero(as_tuple=True)[0]
+            # td_target[done_idxs] = rewards_tensor[done_idxs, 0]
 
         # compute the loss
         td_loss = torch.nn.MSELoss()(q_estimate, td_target)
@@ -244,9 +234,8 @@ class DQNAgent(object):
 
         return td_loss.item()
 
-    # update update target policy
+    # update target policy
     def update_target_policy(self):
-        # hard update
         """CODE HERE:
                 Copy the behavior policy network to the target network
         """
@@ -260,8 +249,8 @@ class DQNAgent(object):
 
     # auxiliary functions
     def _arr_to_tensor(self, arr):
-        arr = np.array(arr).reshape((-1, 1, arr.shape[0], arr.shape[1]))
-        arr_tensor = torch.from_numpy(arr).float().to(self.device)
+        # arr = np.array(arr).reshape((-1, 1, arr.shape[0], arr.shape[1]))
+        arr_tensor = torch.from_numpy(np.array(arr).reshape(-1)).float().to(self.device)
         return arr_tensor
 
     def _batch_to_tensor(self, batch_data):
@@ -270,12 +259,14 @@ class DQNAgent(object):
         # get the numpy arrays
         obs_arr, action_arr, reward_arr, next_obs_arr, done_arr = batch_data
         # convert to tensors
-        batch_data_tensor['obs'] = torch.as_tensor(obs_arr, dtype=torch.float32, device=self.device).reshape(
-            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))  # for CNN
+        # batch_data_tensor['obs'] = torch.as_tensor(obs_arr, dtype=torch.float32, device=self.device).reshape(
+        #     (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))  # reshape for CNN
+        batch_data_tensor['obs'] = torch.as_tensor(obs_arr, dtype=torch.float32, device=self.device)
         batch_data_tensor['action'] = torch.as_tensor(action_arr, device=self.device).long().view(-1, 1)
         batch_data_tensor['reward'] = torch.as_tensor(reward_arr, dtype=torch.float32, device=self.device).view(-1, 1)
-        batch_data_tensor['next_obs'] = torch.as_tensor(next_obs_arr, dtype=torch.float32, device=self.device).reshape(
-            (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
+        # batch_data_tensor['next_obs'] = torch.as_tensor(next_obs_arr, dtype=torch.float32, device=self.device).reshape(
+        #     (-1, 1, obs_arr.shape[1], obs_arr.shape[2]))
+        batch_data_tensor['next_obs'] = torch.as_tensor(next_obs_arr, dtype=torch.float32, device=self.device)
         batch_data_tensor['done'] = torch.as_tensor(done_arr, dtype=torch.float32, device=self.device).view(-1, 1)
 
         return batch_data_tensor
@@ -307,7 +298,6 @@ def train_dqn_agent(env, params):
 
     # start training
     pbar = tqdm.trange(params['total_training_time_step'])
-    last_best_return = np.negative(np.inf)
     for t in pbar:
         # scheduled epsilon at time step t
         eps_t = my_schedule.get_value(t)
@@ -327,9 +317,6 @@ def train_dqn_agent(env, params):
             G = 0
             for r in reversed(rewards):
                 G = r + params['gamma'] * G
-
-            # if G > last_best_return:
-            #     torch.save(my_agent.behavior_policy_net.state_dict(), f"./{params['model_name']}")
 
             # store the return
             train_returns.append(G)
@@ -355,6 +342,7 @@ def train_dqn_agent(env, params):
             # increment
             obs = next_obs
             episode_t += 1
+            # print(my_agent.behavior_policy_net.layers[0].weight)
 
         if t > params['start_training_step']:
             # update the behavior model
@@ -362,7 +350,7 @@ def train_dqn_agent(env, params):
                 """ CODE HERE:
                     Update the behavior policy network
                 """
-                train_loss.append(my_agent.update_behavior_policy(replay_buffer.sample_batch(params['batch_size']), t))
+                train_loss.append(my_agent.update_behavior_policy(replay_buffer.sample_batch(params['batch_size'])))
 
             # update the target model
             if not np.mod(t, params['freq_update_target_policy']):
