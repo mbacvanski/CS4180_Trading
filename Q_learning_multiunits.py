@@ -250,7 +250,8 @@ class Stocks_RL():
                 self.update_Q(state, a, reward, next_state)
             if _ % 10 == 0:
                 print(f"[INFO]: Completed {_+1} of {self.num_trials} trials: \t\t{round((_+1)/self.num_trials*100, 2)}%")
-                print(f"[INFO]: Total profit for trial {_+1}: \t${round(self.trial_profit, 2)}\n")
+                print(f"[INFO]: Total profit ratio for trial {_+1}: \t"
+                      f"{round(self.trial_profit * 1.0 / (self.prices.shape[0] - 1), 5)}\n")
                 print(f"[INFO]: Total units owned: {self.units_owned} \t Holding: {self.holding}")
             self.trial_profits.append(self.trial_profit)
 
