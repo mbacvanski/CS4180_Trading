@@ -56,22 +56,18 @@ def main():
         'action_space': env.action_space,
         'hidden_layer_num': 2,
         'hidden_layer_dim': 8,
-        'gamma': 1, # change gamma to 1
+        'gamma': 1,
 
         'max_time_step_per_episode': 200,
 
-        'total_training_time_step': 500_000 // 1,
+        'total_training_time_step': 500_000 * 2,
 
-        'epsilon_start_value': 1.0,
+        'epsilon_start_value': 0.1,
         'epsilon_end_value': 0.1,
-        'epsilon_duration': 400_000 // 1,
+        'epsilon_duration': 400_000,
 
-        # 'replay_buffer_size': 50000,
-        # 'start_training_step': 2000,
-        'freq_update_behavior_policy': 4,
-        'freq_update_target_policy': 20000,
+        'freq_update_target_policy': 20_000,
 
-        # 'batch_size': 64,
         'learning_rate': 1e-3,
 
         'final_policy_num_plots': 20,
@@ -89,7 +85,8 @@ def main():
     plt.savefig(f'dqn3_loss_{name}')
     plt.clf()
     plot_curves([np.array([train_profits]), np.array([(moving_average(train_profits, n=50))])],
-                ['raw profits', '50-episode moving average'], ['r', 'g'], 'profit', 'DQN2')
+                ['raw profits', '50-episode moving average'], ['r', 'g'], xlabel='Episode', ylabel='Profit ratio',
+                title='DQN2')
     plt.grid()
     plt.savefig(f'dqn3_profits_avg_{name}')
 

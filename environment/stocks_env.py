@@ -3,7 +3,7 @@ from typing import Any
 
 import numpy as np
 
-from environment.trading_env import Action, Position, TradingEnv, load_dataset
+from environment.trading_env import Action, Mode, Position, TradingEnv, load_dataset
 
 
 class StocksEnv(TradingEnv):
@@ -16,12 +16,13 @@ class StocksEnv(TradingEnv):
         self.raw_prices = raw_data.loc[:, 'Close'].to_numpy()
         EPS = 1e-10
         self.df = deepcopy(raw_data)
-        if self.train_range is None or self.test_range is None:
+        if self.train_range is None and self.test_range is None:
             self.df = self.df.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
         else:
+            assert self.train_range == self.test_range
             boundary = int(len(self.df) * self.train_range)
             train_data = raw_data[:boundary].copy()
-            boundary = int(len(raw_data) * (1 + self.test_range))
+            # boundary = int(len(raw_data) * (1 + self.test_range))
             test_data = raw_data[boundary:].copy()
 
             train_data = train_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
@@ -65,20 +66,28 @@ class StocksEnv(TradingEnv):
         selected_feature = np.column_stack([all_feature[k] for k in selected_feature_name])
         feature_dim_len = len(selected_feature_name)
 
-        # validate index
+        # | <--- training ---> | <-- validation --> | <-- test --> |
+        # [         ].....................[         ]....................[         ].........................
+        #           ^                     ^         ^                    ^         ^                        ^
+        #     train start             train end    valid start       valid end     test start           test end
+        # | <---------------------------> | <--------------------------> | <------------------------------> |
+        # [.................] for any given interval that we want to sample points over:
+        # [...]..........[..] we must exclude these two regions
+        # window         episode length
+
         if start_idx is None:
-            if self.train_range is None or self.test_range is None:
-                self.start_idx = np.random.randint(self.window_size, len(self.df) - self._cfg.eps_length)
-            elif self._env_id[-1] == 'e':
-                boundary = int(len(self.df) * (1 + self.test_range))
-                assert len(self.df) - self._cfg.eps_length > boundary + self.window_size, \
-                    "parameter test_range is too large!"
-                self.start_idx = np.random.randint(boundary + self.window_size, len(self.df) - self._cfg.eps_length)
+            if self.mode == Mode.Train:
+                start = self.window_size
+                end = np.floor(len(self.df) * self.train_ratio) - self._cfg.eps_length
+            elif self.mode == Mode.Validation:
+                start = np.ceil(len(self.df) * self.test_ratio)
+                end = np.floor(len(self.df) * (self.validation_ratio + self.train_ratio)) - self._cfg.eps_length
             else:
-                boundary = int(len(self.df) * self.train_range)
-                assert boundary - self._cfg.eps_length > self.window_size, \
-                    "parameter test_range is too small!"
-                self.start_idx = np.random.randint(self.window_size, boundary - self._cfg.eps_length)
+                assert self.mode == Mode.Test
+                start = np.ceil(len(self.df) * (self.validation_ratio + self.train_ratio))
+                end = len(self.df) - self._cfg.eps_length
+            assert end > start
+            self.start_idx = np.random.randint(start, end)
         else:
             self.start_idx = start_idx
 

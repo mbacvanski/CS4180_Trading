@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def plot_curves(arr_list, legend_list, color_list, ylabel, fig_title):
+def plot_curves(arr_list, legend_list, color_list, xlabel='Time Steps', ylabel='', title=['']):
     """
     Args:
         arr_list (list): list of results arrays to plot
@@ -18,7 +18,7 @@ def plot_curves(arr_list, legend_list, color_list, ylabel, fig_title):
 
     # PLEASE NOTE: Change the labels for different plots
     ax.set_ylabel(ylabel)
-    ax.set_xlabel("Time Steps")
+    ax.set_xlabel(xlabel)
 
     # plot results
     h_list = []
@@ -35,7 +35,7 @@ def plot_curves(arr_list, legend_list, color_list, ylabel, fig_title):
         h_list.append(h)
 
     # plot legends
-    ax.set_title(f"{fig_title}")
+    ax.set_title(f"{title}")
     ax.legend(handles=h_list)
 
     # plt.show()

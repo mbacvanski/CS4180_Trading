@@ -44,6 +44,12 @@ class Position(int, Enum):
     LONG = 1.
 
 
+class Mode(Enum):
+    Train = 0
+    Validation = 1
+    Test = 2
+
+
 @dataclasses.dataclass
 class State:
     history: np.ndarray
@@ -106,6 +112,13 @@ class TradingEnv(BaseEnv):
 
         self.train_range = cfg.train_range
         self.test_range = cfg.test_range
+
+        assert cfg.train_ratio + cfg.validation_ratio + cfg.test_ratio == 1.0
+        self.train_ratio = cfg.train_ratio if hasattr(cfg, 'train_ratio') else 1
+        self.validation_ratio = cfg.validation_ratio if hasattr(cfg, 'validation_ratio') else 0
+        self.test_ratio = cfg.test_ratio if hasattr(cfg, 'test_ratio') else 0
+        self.mode = cfg.mode if hasattr(cfg, 'mode') else Mode.Train
+
         self.window_size = cfg.window_size
         self.prices = None
         self.signal_features = None
@@ -137,8 +150,9 @@ class TradingEnv(BaseEnv):
         np.random.seed(self._seed)
         self.np_random, seed = seeding.np_random(seed)
 
-    def reset(self, start_idx: int = None) -> State:
+    def reset(self, start_idx: int = None, mode: Mode = Mode.Train) -> State:
         self.cnt += 1
+        self.mode = mode
         self.prices, self.signal_features, self.feature_dim_len = self._process_data(start_idx)
         if self._init_flag:
             self.shape = (self.window_size, self.feature_dim_len)
@@ -252,7 +266,7 @@ class TradingEnv(BaseEnv):
         self.render_profit(save)
         self.render_price(save)
 
-    def render_together(self, save=True, filename:str=None) -> None:
+    def render_together(self, save=True, filename: str = None) -> None:
         fig, axs = plt.subplots(2)
 
         axs[0].set_xlabel('trading days')
@@ -293,7 +307,7 @@ class TradingEnv(BaseEnv):
         plt.close()
 
     @abstractmethod
-    def _process_data(self):
+    def _process_data(self, start_idx: int = None):
         raise NotImplementedError
 
     @abstractmethod

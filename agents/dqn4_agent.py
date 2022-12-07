@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 import torch
 import tqdm
@@ -130,7 +132,7 @@ class LinearSchedule(object):
             return self._start_value + (time / self._duration * (self._end_value - self._start_value))
 
 
-class DQN3Agent(object):
+class DQN4Agent(object):
     # initialize the agent
     def __init__(self,
                  params,
@@ -212,6 +214,9 @@ class DQN3Agent(object):
         self.behavior_policy_net.load_state_dict(torch.load(model_file, map_location=self.device))
         self.behavior_policy_net.eval()
 
+    def to_file(self, model_file):
+        torch.save(self.behavior_policy_net.state_dict(), model_file)
+
     # auxiliary functions
     def _arr_to_tensor(self, arr):
         arr = np.array(arr)
@@ -219,9 +224,29 @@ class DQN3Agent(object):
         return arr_tensor
 
 
-def train_dqn3_agent(env: TradingEnv, params):
+def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict):
+    profits = []
+    progress = tqdm.trange(params['episodes'])
+    for episode in progress:
+        state = env.reset()
+        for timestep in range(params['episode_duration']):
+            action = agent.get_action(state, eps=0)  # greedy action
+            state, reward, done, _ = env.step(action)
+
+            if done:
+                break
+
+        profits.append(env.final_profit())
+        progress.set_description(
+            f"TEST: Ep={episode} | "
+            f"Profit={env.final_profit():.3f}"
+        )
+    return profits
+
+
+def train_dqn4_agent(env: TradingEnv, params):
     # create the DQN agent
-    my_agent = DQN3Agent(params)
+    my_agent = DQN4Agent(params)
 
     # create the epsilon-greedy schedule
     my_schedule = LinearSchedule(start_value=params['epsilon_start_value'],
@@ -276,7 +301,7 @@ def train_dqn3_agent(env: TradingEnv, params):
 
             # print the information
             pbar.set_description(
-                f"Ep={episode_idx} | "
+                f"TRAIN: Ep={episode_idx} | "
                 f"G={train_returns[-1] if train_returns else 0:.5f} | "
                 f"Profit={env.final_profit():.3f} | "
                 f"Eps={eps_t:.5f}"
@@ -288,10 +313,11 @@ def train_dqn3_agent(env: TradingEnv, params):
 
             # reset the environment
             episode_t, rewards = 0, []
+            env.close()
             obs = env.reset(200)
 
     # save the results
-    return train_returns, train_loss, profits
+    return train_returns, train_loss, profits, my_agent
 
 
 @jit(nopython=True)
