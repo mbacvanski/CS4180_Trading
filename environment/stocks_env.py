@@ -43,8 +43,14 @@ class StocksEnv(TradingEnv):
 
         # normalize datasets individually
         train_data = train_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
+        train_data -= train_data.min()
+        train_data /= train_data.max()
         validation_data = validation_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
+        validation_data -= validation_data.min()
+        validation_data /= validation_data.max()
         test_data = test_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
+        test_data -= test_data.min()
+        test_data /= test_data.max()
         self.df.loc[train_data.index, train_data.columns] = train_data
         self.df.loc[validation_data.index, validation_data.columns] = validation_data
         self.df.loc[test_data.index, test_data.columns] = test_data
