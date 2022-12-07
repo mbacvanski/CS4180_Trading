@@ -71,7 +71,8 @@ def main():
     }
 
     # create experiment
-    train_returns, train_loss, train_profits, validation_profits, agent = train_dqn4_agent(env, train_parameters)
+    train_returns, train_loss, train_profits, validation_profits, agent = train_dqn4_agent(env, train_parameters,
+                                                                                           model_file='dqn4_best.pt')
     plot_curves([np.array([train_returns])], ['dqn'], ['r'], xlabel='Episode', ylabel='Discounted return',
                 title='DQN with Feedforward NN: Training set')
     plt.savefig(f'dqn4_returns_{name}')
@@ -105,11 +106,10 @@ def main():
 
     agent.to_file(f'{name}_model.pt')
 
-    env.set_mode(Mode.Test)
-
     best_agent = DQN4Agent(train_parameters)
     best_agent.load_model('dqn4_best.pt')
 
+    env.set_mode(Mode.Test)
     test_profits = evaluate_dqn4_agent(env=env, agent=best_agent, params={
         'episodes': 200,
         'episode_duration': 200,

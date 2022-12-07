@@ -243,9 +243,11 @@ def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict, verbose
     return profits
 
 
-def train_dqn4_agent(env: TradingEnv, params):
+def train_dqn4_agent(env: TradingEnv, params, model_file: str = None):
     # create the DQN agent
     my_agent = DQN4Agent(params)
+    if model_file:
+        my_agent.load_model(model_file)
 
     # create the epsilon-greedy schedule
     my_schedule = LinearSchedule(start_value=params['epsilon_start_value'],
