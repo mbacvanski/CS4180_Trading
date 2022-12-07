@@ -7,6 +7,7 @@ from numba import jit
 from torch import nn
 
 from environment import TradingEnv
+from environment.trading_env import Mode
 
 
 # customized weight initialization
@@ -175,13 +176,11 @@ class DQN4Agent(object):
     def get_action(self, obs, eps):
         if np.random.random() < eps:  # with probability eps, the agent selects a random action
             action = self.action_space.sample()
-            # print(f'Random action: {action}')
         else:  # with probability 1 - eps, the agent selects a greedy policy
             obs = self._arr_to_tensor(obs).view(1, -1)
             with torch.no_grad():
                 q_values = self.behavior_policy_net(obs)
                 action = q_values.max(dim=1)[1].item()  # index of the maximum value
-                # print(f'NN predicted action: {action}')
         return action
 
     def update_behavior_policy(self, state, action, next_state, reward, done):
@@ -224,9 +223,9 @@ class DQN4Agent(object):
         return arr_tensor
 
 
-def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict):
+def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict, verbose=True):
     profits = []
-    progress = tqdm.trange(params['episodes'])
+    progress = tqdm.trange(params['episodes'], disable=not verbose)
     for episode in progress:
         state = env.reset()
         for timestep in range(params['episode_duration']):
@@ -261,9 +260,11 @@ def train_dqn4_agent(env: TradingEnv, params):
     train_returns = []
     train_loss = []
     profits = []
+    validation_profits = []
+    best_validation_profit = 0
 
     # reset the environment
-    obs = env.reset(200)
+    obs = env.reset(mode=Mode.Train)
 
     # start training
     pbar = tqdm.trange(params['total_training_time_step'])
@@ -290,34 +291,44 @@ def train_dqn4_agent(env: TradingEnv, params):
             obs = next_obs
             episode_t += 1
         else:  # we are done
-            # compute the return
-            G = compute_return(rewards, params['gamma'])
-            # print(rewards)
-
-            # store the return
+            G = compute_return(np.array(rewards), params['gamma'])
             train_returns.append(G)
-            profits.append(env.final_profit())
-            episode_idx = len(train_returns)
 
-            # print the information
-            pbar.set_description(
-                f"TRAIN: Ep={episode_idx} | "
-                f"G={train_returns[-1] if train_returns else 0:.5f} | "
-                f"Profit={env.final_profit():.3f} | "
-                f"Eps={eps_t:.5f}"
-            )
+            final_profit = env.final_profit()
+            profits.append(final_profit)
+            episode_idx = len(train_returns)
 
             # plot the last x episodes
             if episode_idx == 1 or episode_idx > num_episodes - params['final_policy_num_plots']:
                 env.render_together(save=True, filename=f'data/plots/dqn3_{params["name"]}/episode_{episode_idx}')
 
+            # compute profits on validation dataset
+            env.set_mode(Mode.Validation)
+            validation = evaluate_dqn4_agent(env, agent=my_agent, params={
+                'episodes': 10,
+                'episode_duration': 200,
+            }, verbose=False)
+            avg_validation_profit = np.mean(validation)
+            validation_profits.append(avg_validation_profit)
+            if avg_validation_profit > best_validation_profit:
+                best_validation_profit = avg_validation_profit
+                my_agent.to_file('dqn4_best.pt')
+
+            pbar.set_description(
+                f"TRAIN: Ep={episode_idx} | "
+                f"G={train_returns[-1] if train_returns else 0:.5f} | "
+                f"Training Profit={final_profit:.3f} | "
+                f"Validation Profit={avg_validation_profit:.3f} | "
+                f"Eps={eps_t:.5f}"
+            )
+
             # reset the environment
             episode_t, rewards = 0, []
             env.close()
-            obs = env.reset(200)
+            obs = env.reset(mode=Mode.Train)
 
     # save the results
-    return train_returns, train_loss, profits, my_agent
+    return train_returns, train_loss, profits, validation_profits, my_agent
 
 
 @jit(nopython=True)

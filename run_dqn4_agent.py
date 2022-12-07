@@ -6,8 +6,9 @@ import torch
 from easydict import EasyDict
 from matplotlib import pyplot as plt
 
-from agents.dqn4_agent import evaluate_dqn4_agent, train_dqn4_agent
+from agents.dqn4_agent import DQN4Agent, evaluate_dqn4_agent, train_dqn4_agent
 from environment import Position, StocksEnv
+from environment.trading_env import Mode
 from utils.experiment import ExperimentResult
 from utils.plotting import plot_curves
 
@@ -35,9 +36,9 @@ def main():
     torch.manual_seed(1234)
 
     env = StocksEnvWithFeatureVectors(EasyDict({
-        "env_id": 'stocks-dqn', "eps_length": 200,
-        "window_size": 200, "train_range": 0.8, "test_range": 0.8,
-        "stocks_data_filename": 'GOOG'
+        "env_id": 'stocks-dqn-e', "eps_length": 200,
+        "window_size": 200, "train_ratio": 0.7, "validation_ratio": 0.15, "test_ratio": 0.15,
+        "stocks_data_filename": 'GOOG', "mode": Mode.Train
     }))
 
     initial_obs = env.reset()
@@ -53,10 +54,10 @@ def main():
 
         'max_time_step_per_episode': 200,
 
-        'total_training_time_step': 55_000,
+        'total_training_time_step': 50_000,
 
         'epsilon_start_value': 1.0,
-        'epsilon_end_value': 0.01,
+        'epsilon_end_value': 0.001,
         'epsilon_duration': 40_000,
 
         'freq_update_target_policy': 2_000,
@@ -70,7 +71,7 @@ def main():
     }
 
     # create experiment
-    train_returns, train_loss, train_profits, agent = train_dqn4_agent(env, train_parameters)
+    train_returns, train_loss, train_profits, validation_profits, agent = train_dqn4_agent(env, train_parameters)
     plot_curves([np.array([train_returns])], ['dqn'], ['r'], xlabel='Episode', ylabel='Discounted return',
                 title='DQN with Feedforward NN: Training set')
     plt.savefig(f'dqn4_returns_{name}')
@@ -79,11 +80,17 @@ def main():
                 title='DQN with Feedforward NN: Training Set')
     plt.savefig(f'dqn4_loss_{name}')
     plt.clf()
-    plot_curves([np.array([train_profits]), np.array([(moving_average(train_profits, n=50))])],
-                ['raw profits', '50-episode moving average'], ['r', 'g'], xlabel='Episode', ylabel='Profit ratio',
-                title='DQN with Feedforward NN: Training set')
+    plot_curves([np.array([train_profits]), np.array([(moving_average(train_profits, n=20))])],
+                ['Training Profits', '20-episode moving average'], ['r', 'g'], xlabel='Episode',
+                ylabel='Profit ratio', title='DQN with Feedforward NN: Training Profits')
     plt.grid()
     plt.savefig(f'dqn4_profits_train_{name}')
+    plt.clf()
+    plot_curves([np.array([validation_profits]), np.array([(moving_average(validation_profits, n=20))])],
+                ['Validation Profits', '20-episode moving average'], ['r', 'g'], xlabel='Episode',
+                ylabel='Profit ratio', title='DQN with Feedforward NN: Validation Profits')
+    plt.grid()
+    plt.savefig(f'dqn4_profits_validation_{name}')
 
     ExperimentResult(
         config=train_parameters,
@@ -98,12 +105,12 @@ def main():
 
     agent.to_file(f'{name}_model.pt')
 
-    test_env = StocksEnvWithFeatureVectors(EasyDict({
-        "env_id": 'stocks-dqn-e', "eps_length": 200,
-        "window_size": 200, "train_range": 0.8, "test_range": 0.8,
-        "stocks_data_filename": 'GOOG'
-    }))
-    test_profits = evaluate_dqn4_agent(env=test_env, agent=agent, params={
+    env.set_mode(Mode.Test)
+
+    best_agent = DQN4Agent(train_parameters)
+    best_agent.load_model('dqn4_best.pt')
+
+    test_profits = evaluate_dqn4_agent(env=env, agent=best_agent, params={
         'episodes': 200,
         'episode_duration': 200,
     })

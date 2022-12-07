@@ -110,9 +110,6 @@ class TradingEnv(BaseEnv):
             self.save_path = self._cfg.save_path
         # ================================
 
-        self.train_range = cfg.train_range
-        self.test_range = cfg.test_range
-
         assert cfg.train_ratio + cfg.validation_ratio + cfg.test_ratio == 1.0
         self.train_ratio = cfg.train_ratio if hasattr(cfg, 'train_ratio') else 1
         self.validation_ratio = cfg.validation_ratio if hasattr(cfg, 'validation_ratio') else 0
@@ -150,9 +147,12 @@ class TradingEnv(BaseEnv):
         np.random.seed(self._seed)
         self.np_random, seed = seeding.np_random(seed)
 
-    def reset(self, start_idx: int = None, mode: Mode = Mode.Train) -> State:
-        self.cnt += 1
+    def set_mode(self, mode: Mode):
         self.mode = mode
+
+    def reset(self, start_idx: int = None, mode: Mode = None) -> State:
+        self.cnt += 1
+        self.mode = mode if mode else self.mode  # keep same if no change
         self.prices, self.signal_features, self.feature_dim_len = self._process_data(start_idx)
         if self._init_flag:
             self.shape = (self.window_size, self.feature_dim_len)
