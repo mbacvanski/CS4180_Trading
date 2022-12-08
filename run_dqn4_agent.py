@@ -38,7 +38,7 @@ def main():
     env = StocksEnvWithFeatureVectors(EasyDict({
         "env_id": 'stocks-dqn-e', "eps_length": 200,
         "window_size": 200, "train_ratio": 0.7, "validation_ratio": 0.15, "test_ratio": 0.15,
-        "stocks_data_filename": 'GOOG', "mode": Mode.Train
+        "stocks_data_filename": 'DIA', "mode": Mode.Train
     }))
 
     initial_obs = env.reset()
@@ -54,11 +54,11 @@ def main():
 
         'max_time_step_per_episode': 200,
 
-        'total_training_time_step': 100_000,
+        'total_training_time_step': 50_000,
 
         'epsilon_start_value': 1.0,
         'epsilon_end_value': 0.001,
-        'epsilon_duration': 50_000,
+        'epsilon_duration': 40_000,
 
         'freq_update_target_policy': 2_000,
 
