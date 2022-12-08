@@ -302,12 +302,12 @@ def train_dqn4_agent(env: TradingEnv, params, model_file: str = None):
 
             # plot the last x episodes
             if episode_idx == 1 or episode_idx > num_episodes - params['final_policy_num_plots']:
-                env.render_together(save=True, filename=f'data/plots/dqn3_{params["name"]}/episode_{episode_idx}')
+                env.render_together(save=True, filename=f'data/plots/dqn4_{params["name"]}/episode_{episode_idx}')
 
             # compute profits on validation dataset
             env.set_mode(Mode.Validation)
             validation = evaluate_dqn4_agent(env, agent=my_agent, params={
-                'episodes': 10,
+                'episodes': 20,
                 'episode_duration': 200,
             }, verbose=False)
             avg_validation_profit = np.mean(validation)

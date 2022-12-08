@@ -55,19 +55,6 @@ class StocksEnv(TradingEnv):
         self.df.loc[validation_data.index, validation_data.columns] = validation_data
         self.df.loc[test_data.index, test_data.columns] = test_data
 
-        # if self.train_range is None and self.test_range is None:
-        #     self.df = self.df.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
-        # else:
-        #     assert self.train_range == self.test_range
-        #     boundary = int(len(self.df) * self.train_range)
-        #     train_data = raw_data[:boundary].copy()
-        #     # boundary = int(len(raw_data) * (1 + self.test_range))
-        #     test_data = raw_data[boundary:].copy()
-        #
-        #     train_data = train_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
-        #     test_data = test_data.apply(lambda x: (x - x.mean()) / (x.std() + EPS), axis=0)
-        #     self.df.loc[train_data.index, train_data.columns] = train_data
-        #     self.df.loc[test_data.index, test_data.columns] = test_data
         # ======================================
 
         # set cost
