@@ -223,7 +223,7 @@ class DQN4Agent(object):
         return arr_tensor
 
 
-def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict, verbose=True):
+def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict, verbose=True, name='', save=False):
     profits = []
     progress = tqdm.trange(params['episodes'], disable=not verbose)
     for episode in progress:
@@ -240,6 +240,10 @@ def evaluate_dqn4_agent(env: TradingEnv, agent: DQN4Agent, params: Dict, verbose
             f"TEST: Ep={episode} | "
             f"Profit={env.final_profit():.3f}"
         )
+
+        if save:
+            env.render_together(save=True, filename=f'data/plots/dqn4_{name}/evaluation/episode_{episode}')
+
     return profits
 
 

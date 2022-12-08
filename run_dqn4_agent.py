@@ -113,7 +113,7 @@ def main():
     test_profits = evaluate_dqn4_agent(env=env, agent=best_agent, params={
         'episodes': 200,
         'episode_duration': 200,
-    })
+    }, name=train_parameters['name'], save=True)
     plot_curves([np.array([test_profits])],
                 ['Test time profits'], ['r'], xlabel='Episode', ylabel='Profit ratio',
                 title='DQN with Feedforward NN: Test Set')
