@@ -24,3 +24,9 @@ In the root folder exist scripts to run each of the agents, like `run_dqn5_agent
 * DQN4 finally figures out that you need to one-hot the position history. Duh. This uses a large feedforward neural network and finally produces some resemblance of profit.
 * DQN5 is like DQN4 but uses a small neural network and precomputed features: 200-day moving average, 50-day moving average, and current position, one-hotted.
 * DQN6 is like DQN4 but uses a CNN for function approximation over the entire observation space.
+
+### Tabular Q-Learning
+
+* Q_learning_stocks.py : Initial Q-Learning agent. Multiple updates made in Q_learning_singleunits.py
+* Q_learning_singleunits.py : Single unit trader with tunable hyperparameters. Buys and Sells only 1 unit at a time. Made to see if a very general policy/profit can be made.
+* Q_learning_multiunits.py : Multiple unit trader. Buy and Sell strategies can be changed and tuned in the __init__ method. Trader can buy as many units up to "max_buy_units", and sells a certain percentage of owned units. Buy points are stored and profits are calculated as they sell.
